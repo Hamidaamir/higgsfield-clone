@@ -26,8 +26,8 @@ class Settings(BaseSettings):
 
     gemini_api_key: SecretStr | None = None
 
-    modal_token_id: str | None = None
-    modal_token_secret: SecretStr | None = None
+    # Hugging Face token (free account) raises the ZeroGPU quota used for video generation.
+    hf_token: SecretStr | None = None
 
     @property
     def is_production(self) -> bool:

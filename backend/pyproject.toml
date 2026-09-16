@@ -15,7 +15,7 @@ dependencies = [
     "httpx>=0.27",
     "python-multipart>=0.0.9",
     "cloudinary>=1.41",
-    "modal>=1.0",
+    "gradio_client>=1.3",
 ]
 
 [project.optional-dependencies]
@@ -44,7 +44,6 @@ ignore = ["S101", "B008", "RUF012"]
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S", "ASYNC"]
 "scripts/*" = ["S", "ASYNC", "T201"]
-"modal_app/*" = ["S"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
