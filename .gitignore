@@ -1,0 +1,3 @@
+# Hook debug artifacts only. .agent-logs/ is intentionally NOT ignored.
+.claude/hooks/capture-errors.log
+.claude/hooks/last-stdin.json
