@@ -1,0 +1,28 @@
+// ONE real Cloudflare -> Cloudinary generation through the UI. Run sparingly (uses real quota).
+import { chromium } from "playwright";
+const base = "http://127.0.0.1:3000";
+const shots = process.argv[2];
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+await page.goto(`${base}/signup`);
+await page.getByRole("button", { name: /Continue with Email/ }).click();
+await page.fill("#signup-name", "Smoke Tester");
+await page.fill("#signup-email", `smoke-${Date.now()}@example.com`);
+await page.fill("#signup-password", "passw0rd1");
+await page.check("#signup-terms");
+await page.getByRole("button", { name: "Create account" }).click();
+await page.waitForURL(`${base}/generate/image`);
+await page.fill("#image-prompt", "portrait of a woman in a lime green jacket, neon-lit street at night, 35mm film, cinematic");
+const t = Date.now();
+await page.locator('form[aria-label="Image generator"] button[type="submit"]').click();
+await page.waitForSelector('[role="status"]');
+await page.waitForSelector('figure img[src*="res.cloudinary.com"]', { timeout: 90000 });
+console.log(`completed in ${((Date.now() - t) / 1000).toFixed(1)}s`);
+const src = await page.locator("figure img").first().getAttribute("src");
+console.log("img src host:", new URL(src).host, "| path contains higgsfield-clone/development:", src.includes("higgsfield-clone/development"));
+await page.locator("figure").first().hover();
+await page.screenshot({ path: `${shots}/17-real-result.png` });
+await page.locator("figure button").first().click();
+await page.waitForSelector('[role="dialog"]');
+await page.screenshot({ path: `${shots}/18-real-lightbox.png` });
+await browser.close();

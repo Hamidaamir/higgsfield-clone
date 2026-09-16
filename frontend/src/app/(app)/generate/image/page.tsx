@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { ImageGenerator } from "@/features/image-generation/image-generator";
 
 export const metadata: Metadata = { title: "Create Image" };
 
-export default function GenerateImagePage() {
-  return (
-    <PagePlaceholder
-      eyebrow="Image"
-      title="Create Image"
-      description="Generate AI images from a prompt. Wired to a real provider in milestone M2."
-    />
-  );
+interface PageProps {
+  searchParams: Promise<{ model?: string }>;
+}
+
+export default async function ImageGeneratePage({ searchParams }: PageProps) {
+  const { model } = await searchParams;
+  return <ImageGenerator initialModelId={model} />;
 }

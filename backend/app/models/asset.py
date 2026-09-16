@@ -2,7 +2,7 @@ import enum
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Enum, ForeignKey, Index, Integer, String
+from sqlalchemy import Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -46,8 +46,8 @@ class Asset(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     storage_provider: Mapped[str] = mapped_column(String(40), nullable=False)
     storage_key: Mapped[str] = mapped_column(String(255), nullable=False)
-    url: Mapped[str] = mapped_column(String(1000), nullable=False)
-    thumbnail_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    thumbnail_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     mime_type: Mapped[str] = mapped_column(String(80), nullable=False)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     width: Mapped[int | None] = mapped_column(Integer, nullable=True)

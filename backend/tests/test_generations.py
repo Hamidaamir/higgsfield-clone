@@ -5,9 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.models import Asset, Generation, GenerationStatus
 from app.providers.base import ProviderErrorCode
+from app.providers.fake_image import FakeImageProvider
 from app.services.runtime import GenerationRuntime
+from app.storage.fake_storage import FakeStorage
 from tests.conftest import TEST_DATABASE_URL
-from tests.fakes import FakeImageProvider, FakeStorage
 
 USER_A = {"email": "a@example.com", "password": "passw0rd1", "name": "Ada", "accept_terms": True}
 USER_B = {"email": "b@example.com", "password": "passw0rd1", "name": "Bob", "accept_terms": True}
@@ -59,7 +60,7 @@ async def test_valid_generation_completes_with_assets(
     assert len(result["assets"]) == 2
     asset = result["assets"][0]
     assert asset["url"].startswith("https://cdn.example.test/") and asset["mime_type"] == "image/png"
-    assert asset["width"] == 64 and asset["thumbnail_url"]
+    assert asset["width"] == 256 and asset["thumbnail_url"]
 
     provider = runtime.image_provider
     assert isinstance(provider, FakeImageProvider)
@@ -140,7 +141,7 @@ async def test_provider_failure_marks_failed(
 
 
 async def test_storage_failure_is_a_real_failure(client: AsyncClient, runtime: GenerationRuntime) -> None:
-    runtime.storage = FakeStorage(fail=True)
+    runtime.storage = FakeStorage(fail=True, data_urls=False)
     await signup(client, USER_A)
     result = await create_and_wait(client, runtime, PAYLOAD)
     assert result["status"] == "failed"

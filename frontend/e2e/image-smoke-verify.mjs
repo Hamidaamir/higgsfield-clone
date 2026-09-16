@@ -1,0 +1,25 @@
+// Re-checks an already generated real result in the UI without generating again.
+import { chromium } from "playwright";
+const base = "http://127.0.0.1:3000";
+const [shots, email] = process.argv.slice(2);
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+await page.goto(`${base}/login`);
+await page.getByRole("button", { name: /Continue with Email/ }).click();
+await page.fill("#login-email", email);
+await page.fill("#login-password", "passw0rd1");
+await page.getByRole("button", { name: "Log in" }).click();
+await page.waitForURL(`${base}/generate/image`);
+await page.waitForSelector("figure img", { timeout: 30000 });
+const src = await page.locator("figure img").first().getAttribute("src");
+const decoded = decodeURIComponent(src);
+console.log("served via next/image:", src.startsWith("/_next/image"), "| cloudinary path ok:", decoded.includes("res.cloudinary.com") && decoded.includes("higgsfield-clone/development"));
+const natural = await page.locator("figure img").first().evaluate((img) => [img.naturalWidth, img.naturalHeight, img.complete]);
+console.log("rendered natural size:", natural);
+await page.locator("figure").first().hover();
+await page.screenshot({ path: `${shots}/17-real-result.png` });
+await page.locator("figure button").first().click();
+await page.waitForSelector('[role="dialog"]');
+await page.waitForTimeout(800);
+await page.screenshot({ path: `${shots}/18-real-lightbox.png` });
+await browser.close();

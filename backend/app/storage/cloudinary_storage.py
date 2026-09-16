@@ -17,6 +17,15 @@ log = logging.getLogger(__name__)
 # Cloudinary treats audio as the "video" resource type.
 _RESOURCE_TYPES = {MediaType.IMAGE: "image", MediaType.VIDEO: "video", MediaType.AUDIO: "video"}
 UPLOAD_TIMEOUT_S = 60
+_FORMAT_MIME = {
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "webp": "image/webp",
+    "mp4": "video/mp4",
+    "mp3": "audio/mpeg",
+    "wav": "audio/wav",
+}
 
 
 class CloudinaryStorage:
@@ -54,6 +63,10 @@ class CloudinaryStorage:
                 public_id, width=512, crop="limit", quality="auto", fetch_format="auto", secure=True
             )
         duration = result.get("duration")
+        # Cloudinary may transcode on upload (e.g. PNG -> JPEG); trust the stored format.
+        stored_format = str(result.get("format") or "").lower()
+        if stored_format:
+            mime_type = _FORMAT_MIME.get(stored_format, f"{resource_type}/{stored_format}")
         return StoredMedia(
             provider=self.name,
             key=public_id,

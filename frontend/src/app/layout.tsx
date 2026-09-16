@@ -3,7 +3,6 @@ import { Archivo, Inter } from "next/font/google";
 
 import { AppProviders } from "@/components/providers";
 import { PromoBanner } from "@/components/layout/promo-banner";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { TopNav } from "@/components/layout/top-nav";
 import { siteConfig } from "@/lib/config/site";
 
@@ -30,7 +29,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PromoBanner />
           <TopNav />
           <main className="flex-1">{children}</main>
-          <SiteFooter />
         </AppProviders>
       </body>
     </html>

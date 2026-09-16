@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     database_url: str | None = None
     session_secret: SecretStr = SecretStr("dev-only-secret-change-me")
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    # Dev/test only: swap real providers for in-process fakes so UI work spends no quota.
+    use_fake_providers: bool = False
 
     cloudinary_cloud_name: str | None = None
     cloudinary_api_key: str | None = None
@@ -40,6 +42,8 @@ class Settings(BaseSettings):
         missing = [name for name in ("database_url",) if getattr(self, name) is None]
         if self.session_secret.get_secret_value() == "dev-only-secret-change-me":
             missing.append("session_secret")
+        if self.use_fake_providers:
+            missing.append("use_fake_providers must be false")
         if missing:
             raise ValueError(f"Missing required production settings: {', '.join(missing)}")
         return self

@@ -12,8 +12,10 @@ from typing import Any
 from app.config import Settings
 from app.providers.base import ImageGenerationProvider
 from app.providers.cloudflare_image import CloudflareImageProvider
+from app.providers.fake_image import FakeImageProvider
 from app.storage.base import MediaStorage
 from app.storage.cloudinary_storage import CloudinaryStorage
+from app.storage.fake_storage import FakeStorage
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +40,10 @@ class GenerationRuntime:
 
 
 def build_runtime(settings: Settings) -> GenerationRuntime:
+    if settings.use_fake_providers:
+        log.warning("USE_FAKE_PROVIDERS is on: generations use in-process fakes, not real models")
+        return GenerationRuntime(image_provider=FakeImageProvider(latency_s=2.0), storage=FakeStorage())
+
     image_provider: ImageGenerationProvider | None = None
     if settings.cloudflare_account_id and settings.cloudflare_api_token:
         image_provider = CloudflareImageProvider(

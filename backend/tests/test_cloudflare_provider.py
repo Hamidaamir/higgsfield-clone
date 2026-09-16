@@ -6,7 +6,7 @@ import pytest
 
 from app.providers.base import ImageGenerationRequest, ProviderError, ProviderErrorCode
 from app.providers.cloudflare_image import CloudflareImageProvider
-from tests.fakes import png_bytes
+from tests.helpers import png_bytes
 
 SCHNELL = "@cf/black-forest-labs/flux-1-schnell"
 SDXL = "@cf/bytedance/stable-diffusion-xl-lightning"
