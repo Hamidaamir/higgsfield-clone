@@ -107,16 +107,22 @@ async def list_generations(
     *,
     generation_type: GenerationType | None,
     status: GenerationStatus | None,
+    query: str | None = None,
     cursor: str | None,
     limit: int,
 ) -> tuple[list[Generation], str | None]:
-    """Newest-first keyset pagination on (created_at, id)."""
+    """Newest-first keyset pagination on (created_at, id), optionally filtered by prompt/model text."""
     limit = max(1, min(limit, MAX_PAGE_SIZE))
     stmt = select(Generation).options(selectinload(Generation.assets)).where(Generation.user_id == user.id)
     if generation_type is not None:
         stmt = stmt.where(Generation.type == generation_type)
     if status is not None:
         stmt = stmt.where(Generation.status == status)
+    if query:
+        pattern = f"%{_escape_like(query.strip())}%"
+        stmt = stmt.where(
+            Generation.prompt.ilike(pattern, escape="\\") | Generation.model_id.ilike(pattern, escape="\\")
+        )
     if cursor:
         created_at, last_id = _decode_cursor(cursor)
         stmt = stmt.where(
@@ -127,6 +133,10 @@ async def list_generations(
     rows = list((await db.execute(stmt)).scalars().all())
     next_cursor = _encode_cursor(rows[limit - 1]) if len(rows) > limit else None
     return rows[:limit], next_cursor
+
+
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 def _encode_cursor(generation: Generation) -> str:

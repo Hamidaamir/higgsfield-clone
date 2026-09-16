@@ -27,11 +27,18 @@ async def list_generations(
     db: DbSession,
     generation_type: GenerationType | None = Query(default=None, alias="type"),
     generation_status: GenerationStatus | None = Query(default=None, alias="status"),
+    q: str | None = Query(default=None, max_length=200, description="Case-insensitive prompt/model search"),
     cursor: str | None = Query(default=None, max_length=200),
     limit: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE),
 ) -> GenerationListResponse:
     items, next_cursor = await generation_service.list_generations(
-        db, user, generation_type=generation_type, status=generation_status, cursor=cursor, limit=limit
+        db,
+        user,
+        generation_type=generation_type,
+        status=generation_status,
+        query=q,
+        cursor=cursor,
+        limit=limit,
     )
     return GenerationListResponse(
         items=[GenerationResponse.model_validate(g) for g in items], next_cursor=next_cursor

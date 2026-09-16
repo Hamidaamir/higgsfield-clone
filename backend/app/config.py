@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
     # Dev/test only: swap real providers for in-process fakes so UI work spends no quota.
     use_fake_providers: bool = False
+    fake_provider_latency_s: float = 2.0
+    # Per-user cap on generation requests; protects the free provider quotas from bursts.
+    generation_rate_limit_per_minute: int = Field(default=12, ge=1, le=1000)
 
     cloudinary_cloud_name: str | None = None
     cloudinary_api_key: str | None = None

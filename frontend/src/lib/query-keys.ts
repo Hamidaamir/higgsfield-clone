@@ -8,6 +8,7 @@ export const queryKeys = {
   generations: {
     all: ["generations"] as const,
     list: (params: ListGenerationsParams) => ["generations", "list", params] as const,
+    infinite: (params: ListGenerationsParams) => ["generations", "infinite", params] as const,
     detail: (id: string) => ["generations", "detail", id] as const,
   },
 };

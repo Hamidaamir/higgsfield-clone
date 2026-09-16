@@ -6,15 +6,15 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { GenerationDetailDialog } from "@/components/generation/generation-detail-dialog";
 import { GenerationCards } from "@/features/image-generation/generation-card";
 import { PromptDock } from "@/features/image-generation/prompt-dock";
-import { ResultLightbox } from "@/features/image-generation/result-lightbox";
 import { WorkspaceHero } from "@/features/image-generation/workspace-hero";
 import { useCreateImageGeneration, useGenerationList, useModels, useRetryGeneration } from "@/hooks/use-generations";
 import { ApiError } from "@/lib/api/client";
 import type { ListGenerationsParams } from "@/lib/api/generations";
 import { imagePromptSchema } from "@/lib/schemas/generation";
-import type { Asset, Generation, ModelSpec } from "@/types/generation";
+import type { Generation, ModelSpec } from "@/types/generation";
 
 const LIST_PARAMS: ListGenerationsParams = { type: "image", limit: 24 };
 const DEFAULT_MODEL_ID = "flux-1-schnell";
@@ -22,21 +22,25 @@ const DEFAULT_MODEL_ID = "flux-1-schnell";
 interface ImageGeneratorProps {
   /** `?model=` from the URL (mega-menu links); ignored when it is not a runnable model. */
   initialModelId?: string;
+  initialPrompt?: string;
+  initialAspectRatio?: string;
+  initialBatchSize?: number;
 }
 
-export function ImageGenerator({ initialModelId }: ImageGeneratorProps) {
+export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRatio, initialBatchSize }: ImageGeneratorProps) {
   const modelsQuery = useModels("image");
   const listQuery = useGenerationList(LIST_PARAMS);
   const create = useCreateImageGeneration(LIST_PARAMS);
   const retry = useRetryGeneration(LIST_PARAMS);
 
   const models = useMemo(() => modelsQuery.data ?? [], [modelsQuery.data]);
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(() => (initialPrompt ?? "").slice(0, 2000));
   const [modelId, setModelId] = useState<string | null>(null);
-  const [aspectRatio, setAspectRatio] = useState("1:1");
-  const [batchSize, setBatchSize] = useState(1);
+  const [aspectRatio, setAspectRatio] = useState(initialAspectRatio ?? "1:1");
+  const [batchSize, setBatchSize] = useState(() => Math.min(4, Math.max(1, initialBatchSize ?? 1)));
   const [error, setError] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState<{ generation: Generation; asset: Asset } | null>(null);
+  const [detail, setDetail] = useState<{ generation: Generation; assetIndex: number } | null>(null);
+  const detailLive = detail ? (listQuery.data?.items.find((g) => g.id === detail.generation.id) ?? detail.generation) : null;
 
   const model = useMemo(() => {
     const wanted = modelId ?? initialModelId ?? DEFAULT_MODEL_ID;
@@ -79,12 +83,12 @@ export function ImageGenerator({ initialModelId }: ImageGeneratorProps) {
     if (modelById(generation.model_id)) setModelId(generation.model_id);
     if (generation.settings.aspect_ratio) setAspectRatio(generation.settings.aspect_ratio);
     if (generation.settings.batch_size) setBatchSize(generation.settings.batch_size);
-    setLightbox(null);
+    setDetail(null);
     document.getElementById("image-prompt")?.focus();
   };
 
   const regenerate = async (generation: Generation) => {
-    setLightbox(null);
+    setDetail(null);
     try {
       await retry.mutateAsync(generation.id);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -119,7 +123,7 @@ export function ImageGenerator({ initialModelId }: ImageGeneratorProps) {
                 key={generation.id}
                 generation={generation}
                 model={modelById(generation.model_id)}
-                onOpen={(g, asset) => setLightbox({ generation: g, asset })}
+                onOpen={(g, asset) => setDetail({ generation: g, assetIndex: Math.max(0, g.assets.findIndex((a) => a.id === asset.id)) })}
                 onReusePrompt={reusePrompt}
                 onRetry={regenerate}
                 retrying={retry.isPending}
@@ -148,12 +152,14 @@ export function ImageGenerator({ initialModelId }: ImageGeneratorProps) {
         disabledReason={disabledReason}
       />
 
-      <ResultLightbox
-        item={lightbox}
-        model={lightbox ? modelById(lightbox.generation.model_id) : undefined}
-        onClose={() => setLightbox(null)}
+      <GenerationDetailDialog
+        generation={detailLive}
+        initialAssetIndex={detail?.assetIndex}
+        model={detailLive ? modelById(detailLive.model_id) : undefined}
+        onClose={() => setDetail(null)}
         onReusePrompt={reusePrompt}
-        onRetry={regenerate}
+        onRegenerate={regenerate}
+        regenerating={retry.isPending}
       />
     </div>
   );

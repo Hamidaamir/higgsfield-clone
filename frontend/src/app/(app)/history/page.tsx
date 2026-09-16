@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { HistoryView, type HistoryFilter } from "@/features/history/history-view";
 
 export const metadata: Metadata = { title: "History" };
 
-export default function HistoryPage() {
-  return (
-    <PagePlaceholder
-      eyebrow="Library"
-      title="History"
-      description="Every generation you create is saved here. Available after milestone M3."
-    />
-  );
+const FILTERS: HistoryFilter[] = ["all", "image", "video", "audio"];
+
+interface PageProps {
+  searchParams: Promise<{ type?: string }>;
+}
+
+export default async function HistoryPage({ searchParams }: PageProps) {
+  const { type } = await searchParams;
+  const initialFilter = FILTERS.includes(type as HistoryFilter) ? (type as HistoryFilter) : "all";
+  return <HistoryView initialFilter={initialFilter} />;
 }

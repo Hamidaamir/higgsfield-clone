@@ -190,3 +190,16 @@ async def test_rate_limit_protects_quota(client: AsyncClient, runtime: Generatio
     statuses = [(await client.post("/api/generations/image", json=PAYLOAD)).status_code for _ in range(13)]
     assert statuses[:12] == [202] * 12 and statuses[12] == 429
     await runtime.wait_idle()
+
+
+async def test_list_search_filters_by_prompt_or_model(
+    client: AsyncClient, runtime: GenerationRuntime
+) -> None:
+    await signup(client, USER_A)
+    await create_and_wait(client, runtime, {**PAYLOAD, "prompt": "Golden retriever on a beach"})
+    await create_and_wait(client, runtime, {"prompt": "city at night", "model_id": "sdxl-lightning"})
+    hits = (await client.get("/api/generations", params={"q": "RETRIEVER"})).json()["items"]
+    assert [g["prompt"] for g in hits] == ["Golden retriever on a beach"]
+    by_model = (await client.get("/api/generations", params={"q": "sdxl"})).json()["items"]
+    assert [g["model_id"] for g in by_model] == ["sdxl-lightning"]
+    assert (await client.get("/api/generations", params={"q": "100%_nothing"})).json()["items"] == []

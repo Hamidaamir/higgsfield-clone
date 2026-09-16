@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw
 from app.providers.base import ImageGenerationRequest, ProviderError, ProviderErrorCode, ProviderOutput
 
 FAIL_MARKER = "[fail]"  # prompts containing this token simulate a provider failure
+SLOW_MARKER = "[slow]"  # prompts containing this token take an extra 8 s (processing-state tests)
 
 
 def render_placeholder(prompt: str, width: int, height: int) -> bytes:
@@ -44,6 +45,8 @@ class FakeImageProvider:
         self.calls.append((provider_model, request))
         if self.latency_s:
             await asyncio.sleep(self.latency_s)
+        if SLOW_MARKER in request.prompt.lower():
+            await asyncio.sleep(8)
         if self.fail_with is not None:
             raise ProviderError(self.fail_with, "simulated provider failure")
         if FAIL_MARKER in request.prompt.lower():

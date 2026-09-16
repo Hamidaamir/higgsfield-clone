@@ -7,6 +7,7 @@ to stop accidental hammering, not act as a distributed policy.
 import time
 from collections import defaultdict, deque
 
+from app.config import get_settings
 from app.core.errors import AppError
 
 
@@ -38,4 +39,6 @@ class SlidingWindowLimiter:
         self._hits.clear()
 
 
-generation_limiter = SlidingWindowLimiter(limit=12, window_seconds=60)
+generation_limiter = SlidingWindowLimiter(
+    limit=get_settings().generation_rate_limit_per_minute, window_seconds=60
+)

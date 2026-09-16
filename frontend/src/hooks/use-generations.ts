@@ -1,9 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 import {
   createImageGeneration,
+  fetchGeneration,
   fetchGenerations,
   retryGeneration,
   type ImageGenerationInput,
@@ -55,4 +57,61 @@ export function useCreateImageGeneration(listParams: ListGenerationsParams) {
 export function useRetryGeneration(listParams: ListGenerationsParams) {
   const prepend = usePrependGeneration(listParams);
   return useMutation({ mutationFn: (id: string) => retryGeneration(id), onSuccess: prepend });
+}
+
+/** Cursor-paginated history feed ("Load more"). Active items are refreshed by `useActiveGenerationPolling`. */
+export function useInfiniteGenerations(params: ListGenerationsParams) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.generations.infinite(params),
+    queryFn: ({ pageParam }) => fetchGenerations({ ...params, cursor: pageParam ?? undefined }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.next_cursor,
+  });
+}
+
+/**
+ * Polls only the generations that are still queued/processing (usually zero or one)
+ * and patches the result into every cached list, instead of refetching whole pages.
+ */
+export function useActiveGenerationPolling(generations: Generation[]) {
+  const queryClient = useQueryClient();
+  const activeIds = generations.filter(isActive).map((g) => g.id).join(",");
+
+  useEffect(() => {
+    if (!activeIds) return;
+    const ids = activeIds.split(",");
+    let cancelled = false;
+    const tick = async () => {
+      const updates = await Promise.allSettled(ids.map((id) => fetchGeneration(id)));
+      if (cancelled) return;
+      for (const result of updates) {
+        if (result.status === "fulfilled") patchGenerationInCaches(queryClient, result.value);
+      }
+    };
+    const timer = window.setInterval(tick, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeIds, queryClient]);
+}
+
+type InfiniteData = { pages: GenerationList[]; pageParams: unknown[] };
+
+function patchGenerationInCaches(queryClient: ReturnType<typeof useQueryClient>, updated: Generation) {
+  const replace = (items: Generation[]) => items.map((g) => (g.id === updated.id ? updated : g));
+  queryClient.setQueriesData<GenerationList>({ queryKey: ["generations", "list"] }, (data) =>
+    data ? { ...data, items: replace(data.items) } : data,
+  );
+  queryClient.setQueriesData<InfiniteData>({ queryKey: ["generations", "infinite"] }, (data) =>
+    data ? { ...data, pages: data.pages.map((page) => ({ ...page, items: replace(page.items) })) } : data,
+  );
+}
+
+export function useRegenerate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => retryGeneration(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.generations.all }),
+  });
 }

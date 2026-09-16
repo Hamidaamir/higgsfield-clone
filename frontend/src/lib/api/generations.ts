@@ -12,6 +12,7 @@ export interface ImageGenerationInput {
 export interface ListGenerationsParams {
   type?: GenerationType;
   status?: GenerationStatus;
+  q?: string;
   cursor?: string;
   limit?: number;
 }
@@ -28,6 +29,7 @@ export function fetchGenerations(params: ListGenerationsParams = {}) {
   const query = new URLSearchParams();
   if (params.type) query.set("type", params.type);
   if (params.status) query.set("status", params.status);
+  if (params.q) query.set("q", params.q);
   if (params.cursor) query.set("cursor", params.cursor);
   if (params.limit) query.set("limit", String(params.limit));
   const suffix = query.size ? `?${query}` : "";

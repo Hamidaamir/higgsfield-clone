@@ -42,7 +42,10 @@ class GenerationRuntime:
 def build_runtime(settings: Settings) -> GenerationRuntime:
     if settings.use_fake_providers:
         log.warning("USE_FAKE_PROVIDERS is on: generations use in-process fakes, not real models")
-        return GenerationRuntime(image_provider=FakeImageProvider(latency_s=2.0), storage=FakeStorage())
+        return GenerationRuntime(
+            image_provider=FakeImageProvider(latency_s=settings.fake_provider_latency_s),
+            storage=FakeStorage(),
+        )
 
     image_provider: ImageGenerationProvider | None = None
     if settings.cloudflare_account_id and settings.cloudflare_api_token:
