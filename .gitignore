@@ -1,3 +1,32 @@
 # Hook debug artifacts only. .agent-logs/ is intentionally NOT ignored.
 .claude/hooks/capture-errors.log
 .claude/hooks/last-stdin.json
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
