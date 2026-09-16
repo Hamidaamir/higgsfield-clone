@@ -9,17 +9,28 @@ from app.api.router import api_router
 from app.config import APP_VERSION, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
-from app.db.session import dispose_engine
+from app.db.session import dispose_engine, get_engine, get_session_factory
+from app.services.job_runner import reconcile_interrupted
+from app.services.runtime import GenerationRuntime, build_runtime
 
 log = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging()
     settings = get_settings()
     log.info("Starting API v%s (%s)", APP_VERSION, settings.app_env)
+    if not isinstance(getattr(app.state, "runtime", None), GenerationRuntime):
+        app.state.runtime = build_runtime(settings)
+    if get_engine() is not None:
+        try:
+            async with get_session_factory()() as db:
+                await reconcile_interrupted(db)
+        except Exception:  # never block startup on reconciliation
+            log.exception("startup reconciliation failed")
     yield
+    await app.state.runtime.wait_idle()
     await dispose_engine()
 
 

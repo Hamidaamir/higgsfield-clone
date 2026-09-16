@@ -1,0 +1,60 @@
+"""Process-wide wiring of providers, storage and background tasks.
+
+Built once at startup from settings and stored on `app.state`; tests replace it with fakes.
+"""
+
+import asyncio
+import logging
+from collections.abc import Coroutine
+from dataclasses import dataclass, field
+from typing import Any
+
+from app.config import Settings
+from app.providers.base import ImageGenerationProvider
+from app.providers.cloudflare_image import CloudflareImageProvider
+from app.storage.base import MediaStorage
+from app.storage.cloudinary_storage import CloudinaryStorage
+
+log = logging.getLogger(__name__)
+
+
+@dataclass
+class GenerationRuntime:
+    image_provider: ImageGenerationProvider | None
+    storage: MediaStorage | None
+    _tasks: set[asyncio.Task[None]] = field(default_factory=set)
+
+    def spawn(self, coro: Coroutine[Any, Any, None]) -> asyncio.Task[None]:
+        """Run a job in-process without holding the HTTP request open."""
+        task = asyncio.create_task(coro)
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        return task
+
+    async def wait_idle(self) -> None:
+        """Await every in-flight job (used by tests and graceful shutdown)."""
+        while self._tasks:
+            await asyncio.gather(*list(self._tasks), return_exceptions=True)
+
+
+def build_runtime(settings: Settings) -> GenerationRuntime:
+    image_provider: ImageGenerationProvider | None = None
+    if settings.cloudflare_account_id and settings.cloudflare_api_token:
+        image_provider = CloudflareImageProvider(
+            settings.cloudflare_account_id, settings.cloudflare_api_token.get_secret_value()
+        )
+    else:
+        log.warning("Cloudflare credentials missing: image generation disabled")
+
+    storage: MediaStorage | None = None
+    if settings.cloudinary_cloud_name and settings.cloudinary_api_key and settings.cloudinary_api_secret:
+        storage = CloudinaryStorage(
+            settings.cloudinary_cloud_name,
+            settings.cloudinary_api_key,
+            settings.cloudinary_api_secret.get_secret_value(),
+            root_folder=f"higgsfield-clone/{settings.app_env}",
+        )
+    else:
+        log.warning("Cloudinary credentials missing: media storage disabled")
+
+    return GenerationRuntime(image_provider=image_provider, storage=storage)

@@ -2,13 +2,14 @@
 
 from typing import Annotated
 
-from fastapi import Cookie, Depends
+from fastapi import Cookie, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import UnauthorizedError
 from app.db.session import get_db
 from app.models import User
 from app.services import auth_service
+from app.services.runtime import GenerationRuntime
 
 SESSION_COOKIE = "hf_session"
 
@@ -30,3 +31,11 @@ async def get_current_user(user: Annotated[User | None, Depends(get_optional_use
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]
+
+
+def get_runtime(request: Request) -> GenerationRuntime:
+    runtime: GenerationRuntime = request.app.state.runtime
+    return runtime
+
+
+Runtime = Annotated[GenerationRuntime, Depends(get_runtime)]

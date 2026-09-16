@@ -24,9 +24,12 @@ os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 
 from app.api.deps import CurrentUser  # noqa: E402
 from app.config import get_settings  # noqa: E402
+from app.core.ratelimit import generation_limiter  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.session import dispose_engine  # noqa: E402
 from app.main import create_app  # noqa: E402
+from app.services.runtime import GenerationRuntime  # noqa: E402
+from tests.fakes import FakeImageProvider, FakeStorage  # noqa: E402
 
 
 async def _ensure_database_exists() -> None:
@@ -60,9 +63,17 @@ async def clean_tables() -> AsyncIterator[None]:
 
 
 @pytest.fixture
-async def client() -> AsyncIterator[AsyncClient]:
+def runtime() -> GenerationRuntime:
+    """Fake provider + storage; tests tweak `runtime.image_provider` / `runtime.storage` as needed."""
+    return GenerationRuntime(image_provider=FakeImageProvider(), storage=FakeStorage())
+
+
+@pytest.fixture
+async def client(runtime: GenerationRuntime) -> AsyncIterator[AsyncClient]:
     get_settings.cache_clear()
+    generation_limiter.reset()
     app = create_app()
+    app.state.runtime = runtime
 
     @app.get("/api/_test/protected")
     async def protected(user: CurrentUser) -> dict[str, str]:
@@ -71,4 +82,5 @@ async def client() -> AsyncIterator[AsyncClient]:
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
+    await runtime.wait_idle()
     await dispose_engine()
