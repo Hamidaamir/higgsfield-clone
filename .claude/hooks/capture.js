@@ -167,7 +167,8 @@ function appendEntry({ sessionId, type, text, model, nowIso }) {
   let fm, body;
   const short = sessionId.slice(0, 8);
   if (file) {
-    ({ fm, body } = splitFrontmatter(fs.readFileSync(file, "utf8")));
+    // Tolerate CRLF in case git autocrlf has touched the file.
+    ({ fm, body } = splitFrontmatter(fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n")));
   } else {
     file = newLogFile(sessionId, nowIso);
     fm = {
