@@ -6,7 +6,7 @@ async def test_health_reports_version_and_database_state(client: AsyncClient) ->
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["database"] == "unavailable"  # no DATABASE_URL in tests
+    assert body["database"] == "ok"
 
 
 async def test_unknown_route_uses_error_envelope(client: AsyncClient) -> None:

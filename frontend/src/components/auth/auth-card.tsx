@@ -1,0 +1,113 @@
+"use client";
+
+import { Cloud, Gift, Mail, X } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { AuthForm, type AuthMode } from "@/components/auth/auth-form";
+import { AuthPromoPane } from "@/components/auth/auth-promo-pane";
+import { SocialButton } from "@/components/auth/social-button";
+import { LogoMark } from "@/components/layout/logo";
+import { Button } from "@/components/ui/button";
+import { safeNextPath } from "@/hooks/use-auth";
+
+const copy: Record<AuthMode, { title: string; subtitle: string; switchLabel: string; switchCta: string; switchHref: string }> = {
+  signup: {
+    title: "Welcome to Higgsfield",
+    subtitle: "Sign up and generate for free",
+    switchLabel: "Already have an account?",
+    switchCta: "Log in",
+    switchHref: "/login",
+  },
+  login: {
+    title: "Welcome back",
+    subtitle: "Log in to continue creating",
+    switchLabel: "New to Higgsfield?",
+    switchCta: "Sign up",
+    switchHref: "/signup",
+  },
+};
+
+/** Two-pane authentication card reproducing reference/screenshots/signup.png. */
+interface AuthCardProps {
+  mode: AuthMode;
+  /** Raw `?next=` value from the URL; validated before use. */
+  nextPath?: string;
+}
+
+export function AuthCard({ mode, nextPath }: AuthCardProps) {
+  const router = useRouter();
+  const [step, setStep] = useState<"methods" | "email">("methods");
+  const text = copy[mode];
+  const next = safeNextPath(nextPath);
+
+  const onSuccess = () => {
+    toast.success(mode === "signup" ? "Account created. Welcome to Higgsfield!" : "Welcome back!");
+    router.replace(next);
+    router.refresh();
+  };
+
+  return (
+    <div className="relative mx-auto grid w-full max-w-[1100px] overflow-hidden rounded-3xl border border-border bg-surface shadow-menu md:grid-cols-[1fr_1.05fr] md:min-h-[640px]">
+      <AuthPromoPane className="hidden md:block" />
+
+      <div className="relative flex flex-col px-6 py-10 sm:px-12">
+        <Button asChild variant="ghost" size="icon" className="absolute right-4 top-4 rounded-full" aria-label="Close">
+          <Link href="/">
+            <X className="size-4" />
+          </Link>
+        </Button>
+
+        <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center">
+          <span className="mx-auto flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+            <LogoMark className="size-5" />
+          </span>
+          <h1 className="mt-5 text-center text-2xl font-semibold tracking-tight sm:text-[28px]">{text.title}</h1>
+          <p className="mt-1.5 text-center text-sm text-text-secondary">{text.subtitle}</p>
+
+          <div className="mt-8">
+            {step === "methods" ? (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setStep("email")}
+                  className="flex h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-accent/40 bg-accent-muted text-[15px] font-semibold text-accent transition-colors hover:bg-accent/20"
+                >
+                  <Gift className="size-4" aria-hidden />
+                  {mode === "signup" ? "Sign in with business email & Get 50 credits" : "Log in with business email"}
+                </button>
+                <SocialButton provider="google" />
+                <SocialButton provider="apple" />
+                <SocialButton provider="microsoft" />
+                <div className="flex items-center gap-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-text-muted">
+                  <span className="h-px flex-1 bg-border" />
+                  or
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <Button type="button" variant="outline" size="lg" className="w-full gap-2.5 bg-surface" onClick={() => setStep("email")}>
+                  <Mail className="size-4" aria-hidden />
+                  Continue with Email
+                </Button>
+                <p className="pt-2 text-center text-[13px] text-text-secondary">
+                  {text.switchLabel}{" "}
+                  <Link href={text.switchHref} className="font-semibold text-accent hover:underline">
+                    {text.switchCta}
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <AuthForm mode={mode} onBack={() => setStep("methods")} onSuccess={onSuccess} />
+            )}
+          </div>
+
+          <p className="mt-8 border-t border-border pt-5 text-center text-[13px] text-text-secondary">
+            <Cloud className="mr-1.5 inline size-3.5 align-[-2px]" aria-hidden />
+            SSO available on <span className="underline">Scale and Enterprise</span> plans
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

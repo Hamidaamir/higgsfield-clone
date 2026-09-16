@@ -4,8 +4,9 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Globe, Menu, Sparkles, Tag, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { AccountControls } from "@/components/layout/account-controls";
 import { Logo } from "@/components/layout/logo";
 import { MegaMenu } from "@/components/layout/mega-menu";
 import { Badge, navBadgeVariant } from "@/components/ui/badge";
@@ -15,12 +16,7 @@ import { cn } from "@/lib/utils";
 
 const HOVER_CLOSE_DELAY_MS = 120;
 
-interface TopNavProps {
-  /** Right-hand account area (login/signup or the signed-in user menu). */
-  accountSlot?: ReactNode;
-}
-
-export function TopNav({ accountSlot }: TopNavProps) {
+export function TopNav() {
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<MegaMenuKey | null>(null);
   const closeTimer = useRef<number | null>(null);
@@ -74,7 +70,7 @@ export function TopNav({ accountSlot }: TopNavProps) {
                     onFocus={() => setOpenMenu(item.menu ?? null)}
                     onClick={closeMenu}
                     className={cn(
-                      "flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13.5px] font-medium transition-colors",
+                      "flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13px] font-medium transition-colors",
                       active
                         ? "text-accent"
                         : expanded
@@ -127,24 +123,11 @@ export function TopNav({ accountSlot }: TopNavProps) {
             <Globe className="size-4" />
           </button>
           <span className="mx-1 hidden h-5 w-px bg-border md:block" aria-hidden />
-          {accountSlot ?? <DefaultAccountControls />}
+          <AccountControls />
           <MobileNav />
         </div>
       </div>
     </header>
-  );
-}
-
-function DefaultAccountControls() {
-  return (
-    <>
-      <Button asChild variant="ghost" size="sm" className="text-accent hover:text-accent">
-        <Link href="/login">Login</Link>
-      </Button>
-      <Button asChild size="sm">
-        <Link href="/signup">Sign up</Link>
-      </Button>
-    </>
   );
 }
 

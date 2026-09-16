@@ -1,21 +1,28 @@
-# Hook debug artifacts only. .agent-logs/ is intentionally NOT ignored.
+# Hook debug artifacts only. .agent-logs/ is intentionally NOT ignored (8x assessment requirement).
 .claude/hooks/capture-errors.log
 .claude/hooks/last-stdin.json
 
-# Secrets
+# Secrets / local environment (only .env.example is committed)
 .env
 .env.*
 !.env.example
+*.pem
+*.key
 
 # Node / Next.js
 node_modules/
 .next/
 out/
+build/
+dist/
+coverage/
 *.tsbuildinfo
 next-env.d.ts
 .vercel/
+npm-debug.log*
+yarn-error.log*
 
-# Python
+# Python / FastAPI
 __pycache__/
 *.py[cod]
 .venv/
@@ -24,10 +31,22 @@ venv/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
+.spike-output/
+
+# Local databases / logs / generated media
+*.db
+*.sqlite
+*.sqlite3
+*.log
+tmp/
+
+# Playwright artifacts
+test-results/
+playwright-report/
 
 # OS / editor
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
-.spike-output/
+*.swp

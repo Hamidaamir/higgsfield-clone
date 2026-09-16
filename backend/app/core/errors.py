@@ -70,7 +70,11 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(RequestValidationError)
     async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
         fields = [
-            {"field": ".".join(str(loc) for loc in err["loc"] if loc != "body"), "message": err["msg"]}
+            {
+                "field": ".".join(str(loc) for loc in err["loc"] if loc != "body"),
+                # Pydantic prefixes custom validator messages with "Value error, ".
+                "message": err["msg"].removeprefix("Value error, "),
+            }
             for err in exc.errors()
         ]
         return error_response(422, "validation_error", "Request validation failed.", {"fields": fields})
