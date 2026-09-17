@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # so submissions are additionally capped per user (per 10 min) and process-wide (per hour).
     video_rate_limit_per_user_10min: int = Field(default=3, ge=1, le=100)
     video_rate_limit_global_per_hour: int = Field(default=6, ge=1, le=1000)
+    # Aura-1 costs ~1.4k neurons per 1k characters, so speech gets its own per-user cap.
+    audio_rate_limit_per_user_10min: int = Field(default=10, ge=1, le=1000)
 
     cloudinary_cloud_name: str | None = None
     cloudinary_api_key: str | None = None

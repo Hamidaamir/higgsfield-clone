@@ -70,7 +70,12 @@ function DetailBody({
 
   return (
     <>
-      <div className="relative flex min-h-[40vh] items-center justify-center overflow-hidden bg-black md:min-h-[70vh]">
+      <div
+        className={cn(
+          "relative flex items-center justify-center overflow-hidden bg-black",
+          generation.type === "audio" ? "min-h-[240px] md:min-h-[320px]" : "min-h-[40vh] md:min-h-[70vh]",
+        )}
+      >
         {asset ? (
           <MediaPreview asset={asset} alt={generation.prompt} mode="full" priority />
         ) : (
@@ -107,7 +112,9 @@ function DetailBody({
           <span className="text-xs text-text-secondary">{typeLabel(generation.type)}</span>
         </div>
         <div>
-          <DialogTitle className="text-sm font-semibold text-text-secondary">Prompt</DialogTitle>
+          <DialogTitle className="text-sm font-semibold text-text-secondary">
+            {generation.type === "audio" ? "Script" : "Prompt"}
+          </DialogTitle>
           <DialogDescription className="mt-1.5 max-h-40 overflow-y-auto text-sm leading-relaxed text-text-primary scrollbar-thin">
             {generation.prompt}
           </DialogDescription>
@@ -127,6 +134,28 @@ function DetailBody({
             <>
               <dt className="text-text-secondary">Aspect</dt>
               <dd className="font-medium">{generation.settings.aspect_ratio}</dd>
+            </>
+          ) : null}
+          {generation.settings.voice ? (
+            <>
+              <dt className="text-text-secondary">Voice</dt>
+              <dd className="font-medium">
+                {model?.voices.find((v) => v.id === generation.settings.voice)?.name ?? generation.settings.voice}
+              </dd>
+            </>
+          ) : null}
+          {generation.settings.language ? (
+            <>
+              <dt className="text-text-secondary">Language</dt>
+              <dd className="font-medium">
+                {model?.languages.find((l) => l.code === generation.settings.language)?.name ?? generation.settings.language}
+              </dd>
+            </>
+          ) : null}
+          {generation.settings.style_prompt ? (
+            <>
+              <dt className="text-text-secondary">Voice details</dt>
+              <dd className="font-medium">{generation.settings.style_prompt}</dd>
             </>
           ) : null}
           {generation.settings.batch_size && generation.settings.batch_size > 1 ? (

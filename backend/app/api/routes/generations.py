@@ -6,6 +6,7 @@ from app.api.deps import CurrentUser, DbSession, Runtime
 from app.core.ratelimit import generation_limiter
 from app.models import GenerationStatus, GenerationType
 from app.schemas.generation import (
+    AudioGenerationCreate,
     GenerationListResponse,
     GenerationResponse,
     ImageGenerationCreate,
@@ -32,6 +33,15 @@ async def create_video(
 ) -> GenerationResponse:
     generation_limiter.check(str(user.id))
     generation = await generation_service.create_video_generation(db, runtime, user, payload)
+    return GenerationResponse.model_validate(generation)
+
+
+@router.post("/audio", response_model=GenerationResponse, status_code=status.HTTP_202_ACCEPTED)
+async def create_audio(
+    payload: AudioGenerationCreate, user: CurrentUser, db: DbSession, runtime: Runtime
+) -> GenerationResponse:
+    generation_limiter.check(str(user.id))
+    generation = await generation_service.create_audio_generation(db, runtime, user, payload)
     return GenerationResponse.model_validate(generation)
 
 

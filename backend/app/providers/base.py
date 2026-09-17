@@ -32,6 +32,9 @@ USER_MESSAGES: dict[ProviderErrorCode, str] = {
 VIDEO_QUOTA_MESSAGE = (
     "Daily free video generation quota has been used. Try again after the provider quota resets."
 )
+AUDIO_QUOTA_MESSAGE = (
+    "Daily free speech generation quota has been used. Try again after the provider quota resets."
+)
 
 
 class ProviderError(Exception):
@@ -101,4 +104,21 @@ class VideoGenerationProvider(Protocol):
 
     async def generate(self, provider_model: str, request: VideoGenerationRequest) -> ProviderOutput:
         """Run one video generation to completion and return the encoded clip (may take minutes)."""
+        ...
+
+
+@dataclass(frozen=True)
+class AudioGenerationRequest:
+    text: str
+    voice: str | None = None
+    language: str | None = None
+    # Free-text delivery instructions for models that accept them (e.g. "warm documentary narrator").
+    style_prompt: str | None = None
+
+
+class AudioGenerationProvider(Protocol):
+    name: str
+
+    async def generate(self, provider_model: str, request: AudioGenerationRequest) -> ProviderOutput:
+        """Synthesize speech and return encoded audio (wav/mp3) with duration when known."""
         ...

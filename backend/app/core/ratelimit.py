@@ -55,4 +55,7 @@ video_user_limiter = SlidingWindowLimiter(
 video_global_limiter = SlidingWindowLimiter(
     limit=get_settings().video_rate_limit_global_per_hour, window_seconds=3600
 )
+audio_user_limiter = SlidingWindowLimiter(
+    limit=get_settings().audio_rate_limit_per_user_10min, window_seconds=600
+)
 GLOBAL_KEY = "global"

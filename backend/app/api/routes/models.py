@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 
 from app.core.errors import NotFoundError
 from app.models import GenerationType
-from app.schemas.generation import ModelResponse
+from app.schemas.generation import LanguageResponse, ModelResponse, VoiceResponse
 from app.services.model_registry import ModelSpec, get_model, list_models
 
 router = APIRouter(prefix="/models", tags=["models"])
@@ -24,6 +24,11 @@ def _to_response(spec: ModelSpec) -> ModelResponse:
         tags=list(spec.tags),
         durations_s=list(spec.durations_s),
         default_duration_s=spec.default_duration_s,
+        voices=[VoiceResponse(id=v.id, name=v.name, description=v.description) for v in spec.voices],
+        default_voice=spec.default_voice,
+        languages=[LanguageResponse(code=lang.code, name=lang.name) for lang in spec.languages],
+        default_language=spec.default_language,
+        supports_style_prompt=spec.supports_style_prompt,
     )
 
 

@@ -21,6 +21,10 @@ export function reuseHref(generation: Generation, models: ModelSpec[] | undefine
     if (batch && batch <= model.max_batch) params.set("batch", String(batch));
     const duration = generation.settings.duration_s;
     if (duration && model.durations_s.includes(duration)) params.set("duration", String(duration));
+    const voice = generation.settings.voice;
+    if (voice && model.voices.some((v) => v.id === voice)) params.set("voice", voice);
+    const language = generation.settings.language;
+    if (language && model.languages.some((l) => l.code === language)) params.set("language", language);
   }
   return `${GENERATOR_ROUTES[generation.type]}?${params}`;
 }

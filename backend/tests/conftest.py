@@ -28,6 +28,7 @@ from app.core.ratelimit import generation_limiter  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.db.session import dispose_engine  # noqa: E402
 from app.main import create_app  # noqa: E402
+from app.providers.fake_audio import FakeAudioProvider  # noqa: E402
 from app.providers.fake_image import FakeImageProvider  # noqa: E402
 from app.providers.fake_video import FakeVideoProvider  # noqa: E402
 from app.services.runtime import GenerationRuntime  # noqa: E402
@@ -71,6 +72,7 @@ def runtime() -> GenerationRuntime:
         image_provider=FakeImageProvider(),
         storage=FakeStorage(serve_locally=False),
         video_provider=FakeVideoProvider(),
+        audio_providers={"cloudflare": FakeAudioProvider(), "gemini": FakeAudioProvider()},
     )
 
 

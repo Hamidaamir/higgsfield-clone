@@ -25,6 +25,7 @@ from app.models import (
     MediaType,
 )
 from app.providers.base import (
+    AudioGenerationRequest,
     ImageGenerationRequest,
     ProviderError,
     ProviderErrorCode,
@@ -103,6 +104,8 @@ async def _produce_outputs(
         return await _generate_images(runtime, generation, spec.provider_model, spec.default_steps)
     if generation.type == GenerationType.VIDEO:
         return [await _generate_video(runtime, db, generation, spec.provider_model)]
+    if generation.type == GenerationType.AUDIO:
+        return await _generate_audio(runtime, generation, spec.provider, spec.provider_model)
     raise ProviderError(
         ProviderErrorCode.NOT_CONFIGURED, f"no provider for {generation.type}", retryable=False
     )
@@ -162,6 +165,29 @@ async def _generate_video(
         reference_image=reference_bytes,
     )
     return await runtime.video_provider.generate(provider_model, request)
+
+
+async def _generate_audio(
+    runtime: GenerationRuntime, generation: Generation, provider_name: str, provider_model: str
+) -> list[ProviderOutput]:
+    provider = runtime.audio_providers.get(provider_name)
+    if provider is None:
+        raise ProviderError(
+            ProviderErrorCode.NOT_CONFIGURED,
+            f"audio provider {provider_name} not configured",
+            retryable=False,
+        )
+    settings: dict[str, Any] = generation.settings
+    request = AudioGenerationRequest(
+        text=generation.prompt,
+        voice=settings.get("voice"),
+        language=settings.get("language"),
+        style_prompt=settings.get("style_prompt"),
+    )
+    batch_size = int(settings.get("batch_size", 1))
+    return list(
+        await asyncio.gather(*(provider.generate(provider_model, request) for _ in range(batch_size)))
+    )
 
 
 async def _load_reference_image(

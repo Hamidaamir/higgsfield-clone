@@ -18,6 +18,15 @@ export interface VideoGenerationInput {
   reference_asset_id?: string;
 }
 
+export interface AudioGenerationInput {
+  text: string;
+  model_id: string;
+  voice?: string;
+  language?: string;
+  style_prompt?: string;
+  batch_size: number;
+}
+
 export interface ListGenerationsParams {
   type?: GenerationType;
   status?: GenerationStatus;
@@ -31,6 +40,9 @@ export const createImageGeneration = (input: ImageGenerationInput) =>
 
 export const createVideoGeneration = (input: VideoGenerationInput) =>
   api.post<Generation>("/api/generations/video", input, { retries: 0 });
+
+export const createAudioGeneration = (input: AudioGenerationInput) =>
+  api.post<Generation>("/api/generations/audio", input, { retries: 0 });
 
 export const fetchGeneration = (id: string) => api.get<Generation>(`/api/generations/${id}`);
 

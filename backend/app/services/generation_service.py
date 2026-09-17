@@ -9,9 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.errors import ConflictError, NotFoundError, ValidationError
-from app.core.ratelimit import GLOBAL_KEY, video_global_limiter, video_user_limiter
+from app.core.ratelimit import GLOBAL_KEY, audio_user_limiter, video_global_limiter, video_user_limiter
 from app.models import ACTIVE_STATUSES, Asset, Generation, GenerationStatus, GenerationType, MediaType, User
-from app.schemas.generation import ImageGenerationCreate, VideoGenerationCreate
+from app.schemas.generation import AudioGenerationCreate, ImageGenerationCreate, VideoGenerationCreate
 from app.services import job_runner
 from app.services.model_registry import ModelSpec, get_model
 from app.services.runtime import GenerationRuntime
@@ -91,6 +91,42 @@ async def create_video_generation(
     video_user_limiter.check(str(user.id), what="video generations")
     video_global_limiter.check(GLOBAL_KEY, what="video generations across the app")
     return await _enqueue(db, runtime, user, spec, payload.prompt, settings, credit_cost=spec.credit_cost)
+
+
+async def create_audio_generation(
+    db: AsyncSession, runtime: GenerationRuntime, user: User, payload: AudioGenerationCreate
+) -> Generation:
+    spec = _require_model(payload.model_id, GenerationType.AUDIO)
+    if payload.batch_size > spec.max_batch:
+        raise _field_error(
+            f"{spec.name} supports at most {spec.max_batch} takes per generation.",
+            "batch_size",
+            f"Maximum {spec.max_batch}",
+        )
+    settings: dict[str, object] = {"batch_size": payload.batch_size}
+    if spec.voices:
+        voice = payload.voice or spec.default_voice
+        if voice not in {v.id for v in spec.voices}:
+            raise _field_error(f"{spec.name} does not have that voice.", "voice", "Choose a listed voice.")
+        settings["voice"] = voice
+    elif payload.voice:
+        raise _field_error(f"{spec.name} has a single voice.", "voice", "Not supported.")
+    if spec.languages:
+        language = payload.language or spec.default_language
+        if language not in {lang.code for lang in spec.languages}:
+            raise _field_error(f"{spec.name} does not support that language.", "language", "Unsupported.")
+        settings["language"] = language
+    elif payload.language:
+        raise _field_error(f"{spec.name} does not take a language.", "language", "Not supported.")
+    if payload.style_prompt:
+        if not spec.supports_style_prompt:
+            raise _field_error(f"{spec.name} does not take voice details.", "style_prompt", "Not supported.")
+        settings["style_prompt"] = payload.style_prompt
+
+    audio_user_limiter.check(str(user.id), what="speech generations")
+    return await _enqueue(
+        db, runtime, user, spec, payload.text, settings, credit_cost=spec.credit_cost * payload.batch_size
+    )
 
 
 async def _require_owned_image_asset(db: AsyncSession, user: User, asset_id: uuid.UUID) -> Asset:
@@ -173,6 +209,16 @@ async def retry_generation(
             reference_asset_id=uuid.UUID(str(reference)) if reference else None,
         )
         child = await create_video_generation(db, runtime, user, video_payload)
+    elif parent.type == GenerationType.AUDIO:
+        audio_payload = AudioGenerationCreate(
+            text=parent.prompt,
+            model_id=parent.model_id,
+            voice=settings.get("voice"),
+            language=settings.get("language"),
+            style_prompt=settings.get("style_prompt"),
+            batch_size=int(settings.get("batch_size", 1)),
+        )
+        child = await create_audio_generation(db, runtime, user, audio_payload)
     else:
         raise ValidationError("This generation type cannot be retried yet.")
     child.parent_generation_id = parent.id

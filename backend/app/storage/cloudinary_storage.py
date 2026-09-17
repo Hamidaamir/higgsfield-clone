@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 _RESOURCE_TYPES = {MediaType.IMAGE: "image", MediaType.VIDEO: "video", MediaType.AUDIO: "video"}
 UPLOAD_TIMEOUT_S = 60
 FETCH_TIMEOUT_S = 30
-_FORMAT_MIME = {
+_FORMAT_MIME: dict[str, str] = {
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
     "png": "image/png",

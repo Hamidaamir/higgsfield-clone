@@ -8,6 +8,8 @@ from app.models import GenerationStatus, GenerationType, MediaType
 
 PROMPT_MAX_LENGTH = 2000
 NEGATIVE_PROMPT_MAX_LENGTH = 500
+SCRIPT_MAX_LENGTH = 2000
+STYLE_PROMPT_MAX_LENGTH = 500
 
 
 class ImageGenerationCreate(BaseModel):
@@ -58,6 +60,29 @@ class VideoGenerationCreate(BaseModel):
         return value or None
 
 
+class AudioGenerationCreate(BaseModel):
+    text: str = Field(min_length=1, max_length=SCRIPT_MAX_LENGTH)
+    model_id: str = Field(min_length=1, max_length=80)
+    voice: str | None = Field(default=None, max_length=40)
+    language: str | None = Field(default=None, max_length=8)
+    style_prompt: str | None = Field(default=None, max_length=STYLE_PROMPT_MAX_LENGTH)
+    batch_size: int = Field(default=1, ge=1, le=4)
+
+    @field_validator("text")
+    @classmethod
+    def _text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Script is required.")
+        return value
+
+    @field_validator("style_prompt")
+    @classmethod
+    def _style(cls, value: str | None) -> str | None:
+        value = (value or "").strip()
+        return value or None
+
+
 class AssetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -98,6 +123,17 @@ class GenerationListResponse(BaseModel):
     next_cursor: str | None
 
 
+class VoiceResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+
+
+class LanguageResponse(BaseModel):
+    code: str
+    name: str
+
+
 class ModelResponse(BaseModel):
     id: str
     name: str
@@ -113,3 +149,8 @@ class ModelResponse(BaseModel):
     tags: list[str]
     durations_s: list[int]
     default_duration_s: int | None
+    voices: list[VoiceResponse]
+    default_voice: str | None
+    languages: list[LanguageResponse]
+    default_language: str | None
+    supports_style_prompt: bool

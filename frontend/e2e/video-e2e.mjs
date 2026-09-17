@@ -1,7 +1,6 @@
 // Browser-level check of the video workflow against the local stack with the backend in
 // USE_FAKE_PROVIDERS mode (no Hugging Face quota is used).
 import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
 
 const base = "http://127.0.0.1:3000";
 const [shots, pngPath] = process.argv.slice(2);

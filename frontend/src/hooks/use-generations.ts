@@ -4,11 +4,13 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useEffect } from "react";
 
 import {
+  createAudioGeneration,
   createImageGeneration,
   createVideoGeneration,
   fetchGeneration,
   fetchGenerations,
   retryGeneration,
+  type AudioGenerationInput,
   type ImageGenerationInput,
   type ListGenerationsParams,
   type VideoGenerationInput,
@@ -52,6 +54,14 @@ export function useCreateVideoGeneration(listParams: ListGenerationsParams) {
   const prepend = usePrependGeneration(listParams);
   return useMutation({
     mutationFn: (input: VideoGenerationInput) => createVideoGeneration(input),
+    onSuccess: prepend,
+  });
+}
+
+export function useCreateAudioGeneration(listParams: ListGenerationsParams) {
+  const prepend = usePrependGeneration(listParams);
+  return useMutation({
+    mutationFn: (input: AudioGenerationInput) => createAudioGeneration(input),
     onSuccess: prepend,
   });
 }

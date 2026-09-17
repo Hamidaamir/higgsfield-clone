@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { AudioGenerator } from "@/features/audio-generation/audio-generator";
 
 export const metadata: Metadata = { title: "Text to Speech" };
 
-export default function GenerateAudioPage() {
-  return (
-    <PagePlaceholder
-      eyebrow="Audio"
-      title="Text to Speech"
-      description="Lifelike speech from any script. Wired to a real provider in milestone M5."
-    />
-  );
+interface PageProps {
+  searchParams: Promise<{ model?: string; prompt?: string; voice?: string; language?: string }>;
+}
+
+/** `?model=&prompt=&voice=&language=` come from mega-menu links and History "Reuse prompt". */
+export default async function AudioGeneratePage({ searchParams }: PageProps) {
+  const { model, prompt, voice, language } = await searchParams;
+  return <AudioGenerator initialModelId={model} initialScript={prompt} initialVoice={voice} initialLanguage={language} />;
 }

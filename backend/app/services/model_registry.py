@@ -27,6 +27,19 @@ ASPECT_RATIO_DIMENSIONS: dict[str, tuple[int, int]] = {
 
 
 @dataclass(frozen=True)
+class VoiceSpec:
+    id: str
+    name: str
+    description: str
+
+
+@dataclass(frozen=True)
+class LanguageSpec:
+    code: str
+    name: str
+
+
+@dataclass(frozen=True)
 class ModelSpec:
     id: str
     name: str
@@ -45,6 +58,12 @@ class ModelSpec:
     # Video only: selectable clip lengths in seconds.
     durations_s: tuple[int, ...] = ()
     default_duration_s: int | None = None
+    # Audio only: controlled voice / language sets and free-text delivery instructions.
+    voices: tuple[VoiceSpec, ...] = ()
+    default_voice: str | None = None
+    languages: tuple[LanguageSpec, ...] = ()
+    default_language: str | None = None
+    supports_style_prompt: bool = False
 
 
 IMAGE_MODELS: tuple[ModelSpec, ...] = (
@@ -120,9 +139,90 @@ VIDEO_MODELS: tuple[ModelSpec, ...] = (
     ),
 )
 
-_MODELS: dict[str, ModelSpec] = {m.id: m for m in (*IMAGE_MODELS, *VIDEO_MODELS)}
+# Deepgram Aura-1 speakers as exposed by Cloudflare Workers AI (verified: "luna").
+_AURA_VOICES = (
+    VoiceSpec("asteria", "Asteria", "Female · clear, warm"),
+    VoiceSpec("luna", "Luna", "Female · soft, friendly"),
+    VoiceSpec("stella", "Stella", "Female · bright, upbeat"),
+    VoiceSpec("athena", "Athena", "Female · calm, measured"),
+    VoiceSpec("hera", "Hera", "Female · confident"),
+    VoiceSpec("orion", "Orion", "Male · deep, smooth"),
+    VoiceSpec("arcas", "Arcas", "Male · natural, relaxed"),
+    VoiceSpec("perseus", "Perseus", "Male · energetic"),
+    VoiceSpec("angus", "Angus", "Male · warm, narrative"),
+    VoiceSpec("orpheus", "Orpheus", "Male · rich, expressive"),
+    VoiceSpec("helios", "Helios", "Male · authoritative"),
+    VoiceSpec("zeus", "Zeus", "Male · commanding"),
+)
+_MELO_LANGUAGES = (
+    LanguageSpec("en", "English"),
+    LanguageSpec("es", "Spanish"),
+    LanguageSpec("fr", "French"),
+    LanguageSpec("zh", "Chinese"),
+    LanguageSpec("ja", "Japanese"),
+    LanguageSpec("ko", "Korean"),
+)
+# Gemini prebuilt voices (verified: "Kore").
+_GEMINI_VOICES = (
+    VoiceSpec("Kore", "Kore", "Firm, balanced"),
+    VoiceSpec("Puck", "Puck", "Upbeat, playful"),
+    VoiceSpec("Charon", "Charon", "Informative, deep"),
+    VoiceSpec("Fenrir", "Fenrir", "Excitable, bold"),
+    VoiceSpec("Aoede", "Aoede", "Breezy, light"),
+    VoiceSpec("Zephyr", "Zephyr", "Bright, friendly"),
+    VoiceSpec("Leda", "Leda", "Youthful, clear"),
+    VoiceSpec("Orus", "Orus", "Firm, mature"),
+)
+
+AUDIO_MODELS: tuple[ModelSpec, ...] = (
+    ModelSpec(
+        id="aura-1",
+        name="Aura 1",
+        description="Twelve expressive English voices with natural pacing",
+        type=GenerationType.AUDIO,
+        provider="cloudflare",
+        provider_model="@cf/deepgram/aura-1",
+        max_batch=2,
+        badge="TOP",
+        credit_cost=2,
+        tags=("recommended", "voices"),
+        voices=_AURA_VOICES,
+        default_voice="luna",
+    ),
+    ModelSpec(
+        id="melotts",
+        name="MeloTTS",
+        description="Fast multilingual narration, one natural voice per language",
+        type=GenerationType.AUDIO,
+        provider="cloudflare",
+        provider_model="@cf/myshell-ai/melotts",
+        max_batch=4,
+        credit_cost=1,
+        tags=("fast", "multilingual"),
+        languages=_MELO_LANGUAGES,
+        default_language="en",
+    ),
+    ModelSpec(
+        id="gemini-tts",
+        name="Gemini TTS",
+        description="Describe the delivery in words: tone, pace, emotion",
+        type=GenerationType.AUDIO,
+        provider="gemini",
+        provider_model="gemini-2.5-flash-preview-tts",
+        max_batch=1,
+        badge="NEW",
+        credit_cost=3,
+        tags=("style",),
+        voices=_GEMINI_VOICES,
+        default_voice="Kore",
+        supports_style_prompt=True,
+    ),
+)
+
+_MODELS: dict[str, ModelSpec] = {m.id: m for m in (*IMAGE_MODELS, *VIDEO_MODELS, *AUDIO_MODELS)}
 DEFAULT_IMAGE_MODEL_ID = "flux-1-schnell"
 DEFAULT_VIDEO_MODEL_ID = "ltx-video"
+DEFAULT_AUDIO_MODEL_ID = "aura-1"
 
 
 def list_models(model_type: GenerationType | None = None) -> list[ModelSpec]:

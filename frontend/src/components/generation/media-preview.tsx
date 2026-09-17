@@ -3,6 +3,7 @@
 import { AudioLines } from "lucide-react";
 import Image from "next/image";
 
+import { Waveform } from "@/components/generation/waveform";
 import { cn } from "@/lib/utils";
 import type { Asset } from "@/types/generation";
 
@@ -53,12 +54,23 @@ export function MediaPreview({ asset, alt, mode = "tile", className, sizes, prio
     );
   }
 
+  const seconds = asset.duration_ms ? Math.round(asset.duration_ms / 1000) : null;
   return (
-    <div className={cn("absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-surface-muted to-surface p-4", className)}>
-      <AudioLines className="size-10 text-accent" aria-hidden />
-      {mode === "full" ? <audio src={asset.url} controls preload="metadata" aria-label={alt} className="w-full max-w-md" /> : null}
-      {asset.duration_ms ? (
-        <span className="text-xs tabular-nums text-text-secondary">{Math.round(asset.duration_ms / 1000)}s</span>
+    <div
+      className={cn(
+        "absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[radial-gradient(80%_60%_at_50%_100%,rgba(214,255,0,0.14),transparent_70%)] bg-surface-muted p-4",
+        className,
+      )}
+    >
+      <div className="flex h-16 w-full max-w-md items-center gap-3 overflow-hidden px-3">
+        <AudioLines className="size-6 shrink-0 text-accent" aria-hidden />
+        <Waveform seed={asset.id} bars={mode === "full" ? 56 : 24} className="h-full" />
+        {seconds !== null && mode === "full" ? (
+          <span className="shrink-0 text-xs tabular-nums text-text-secondary">{seconds}s</span>
+        ) : null}
+      </div>
+      {mode === "full" ? (
+        <audio src={asset.url} controls preload="metadata" aria-label={alt} className="w-full max-w-md" />
       ) : null}
     </div>
   );

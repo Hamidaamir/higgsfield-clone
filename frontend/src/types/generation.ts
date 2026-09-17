@@ -18,6 +18,23 @@ export interface ModelSpec {
   /** Video models only: selectable clip lengths in seconds. */
   durations_s: number[];
   default_duration_s: number | null;
+  /** Audio models only. */
+  voices: VoiceSpec[];
+  default_voice: string | null;
+  languages: LanguageSpec[];
+  default_language: string | null;
+  supports_style_prompt: boolean;
+}
+
+export interface VoiceSpec {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface LanguageSpec {
+  code: string;
+  name: string;
 }
 
 export interface Asset {
@@ -40,6 +57,13 @@ export interface ImageGenerationSettings {
   seed?: number;
 }
 
+export interface AudioGenerationSettings {
+  voice?: string;
+  language?: string;
+  style_prompt?: string;
+  batch_size?: number;
+}
+
 export interface VideoGenerationSettings {
   aspect_ratio?: string;
   duration_s?: number;
@@ -55,7 +79,7 @@ export interface Generation {
   provider: string;
   model_id: string;
   prompt: string;
-  settings: ImageGenerationSettings & VideoGenerationSettings & Record<string, unknown>;
+  settings: ImageGenerationSettings & VideoGenerationSettings & AudioGenerationSettings & Record<string, unknown>;
   error_code: string | null;
   error_message: string | null;
   credit_cost: number;
