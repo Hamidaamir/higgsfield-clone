@@ -1,6 +1,7 @@
 "use client";
 
 import { AtSign, Pencil, Sparkles, Volume2 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { AspectRatioPicker } from "@/components/generator/aspect-ratio-picker";
@@ -32,10 +33,11 @@ export interface VideoSidebarProps {
   disabledReason?: string | null;
 }
 
+// Edit Video has no free provider; its tab opens the honest preview page instead of a dead control.
 const MODE_TABS = [
-  { id: "create", label: "Create Video", available: true },
-  { id: "edit", label: "Edit Video", available: false },
-  { id: "motion", label: "Motion Control", available: false },
+  { id: "create", label: "Create Video", href: null },
+  { id: "edit", label: "Edit Video", href: "/tools/edit-video" },
+  { id: "motion", label: "Motion Control", href: "/tools/cinema-studio" },
 ] as const;
 
 /** Left control column of the video workspace (reference/screenshots/212453.png). */
@@ -71,26 +73,25 @@ export function VideoSidebar({
       className="flex flex-col gap-3 rounded-3xl border border-border bg-surface p-3"
     >
       <div role="tablist" aria-label="Video mode" className="flex gap-1 border-b border-border pb-2">
-        {MODE_TABS.map((tab) => {
-          const active = tab.id === "create";
-          const button = (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              aria-disabled={!tab.available || undefined}
-              className={cn(
-                "relative px-2 pb-1.5 pt-1 text-[13px] font-semibold",
-                active ? "text-text-primary" : "cursor-not-allowed text-text-muted",
-              )}
-            >
+        {MODE_TABS.map((tab) =>
+          tab.href ? (
+            <Tooltip key={tab.id} content="Preview surface — no free provider yet">
+              <Link
+                href={tab.href}
+                role="tab"
+                aria-selected={false}
+                className="relative px-2 pb-1.5 pt-1 text-[13px] font-semibold text-text-muted hover:text-text-secondary"
+              >
+                {tab.label}
+              </Link>
+            </Tooltip>
+          ) : (
+            <button key={tab.id} type="button" role="tab" aria-selected className="relative px-2 pb-1.5 pt-1 text-[13px] font-semibold text-text-primary">
               {tab.label}
-              {active ? <span className="absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-accent" aria-hidden /> : null}
+              <span className="absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-accent" aria-hidden />
             </button>
-          );
-          return tab.available ? button : <Tooltip key={tab.id} content="Coming later in this build">{button}</Tooltip>;
-        })}
+          ),
+        )}
       </div>
 
       {/* Preset card: the reference shows the active preset + model; "Change" opens the model list. */}

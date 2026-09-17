@@ -56,6 +56,13 @@ async def create_image_generation(
         settings["negative_prompt"] = payload.negative_prompt
     if payload.seed is not None:
         settings["seed"] = payload.seed
+    if payload.reference_asset_id is not None:
+        if not spec.supports_reference_image:
+            raise _field_error(
+                f"{spec.name} does not support reference images.", "reference_asset_id", "Unsupported."
+            )
+        await _require_owned_image_asset(db, user, payload.reference_asset_id)
+        settings["reference_asset_id"] = str(payload.reference_asset_id)
     return await _enqueue(
         db, runtime, user, spec, payload.prompt, settings, credit_cost=spec.credit_cost * payload.batch_size
     )
@@ -190,12 +197,14 @@ async def retry_generation(
         raise ConflictError("This generation is still running.")
     settings = parent.settings
     if parent.type == GenerationType.IMAGE:
+        image_reference = settings.get("reference_asset_id")
         payload = ImageGenerationCreate(
             prompt=parent.prompt,
             model_id=parent.model_id,
             aspect_ratio=str(settings.get("aspect_ratio", "1:1")),
             batch_size=int(settings.get("batch_size", 1)),
             negative_prompt=settings.get("negative_prompt"),
+            reference_asset_id=uuid.UUID(str(image_reference)) if image_reference else None,
         )
         child = await create_image_generation(db, runtime, user, payload)
     elif parent.type == GenerationType.VIDEO:

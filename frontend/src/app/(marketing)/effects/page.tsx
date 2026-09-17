@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { SectionHeader } from "@/components/discovery/primitives";
+import { EffectsGallery } from "@/features/effects/effects-gallery";
 
-export const metadata: Metadata = { title: "Visual Effects" };
+export const metadata: Metadata = { title: "Effects" };
 
 export default function EffectsPage() {
   return (
-    <PagePlaceholder
-      eyebrow="Free"
-      title="Visual Effects"
-      description="Big-budget visual effects, from explosions to surreal transformations."
-    />
+    <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-6 sm:px-6">
+      <SectionHeader
+        as="h1"
+        title="Visual effects"
+        subtitle="Big-budget visual effects, from explosions to surreal transformations. Every preset opens Create Video pre-filled — free to use."
+      />
+      <EffectsGallery />
+    </div>
   );
 }

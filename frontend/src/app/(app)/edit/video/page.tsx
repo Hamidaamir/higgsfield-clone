@@ -1,15 +1,6 @@
-import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
-
-export const metadata: Metadata = { title: "Edit Video" };
-
+/** No free video-to-video model exists; the preview surface explains the gap and links to working paths. */
 export default function EditVideoPage() {
-  return (
-    <PagePlaceholder
-      eyebrow="Edit"
-      title="Edit Video"
-      description="Edit scenes, shots and elements with text prompts."
-    />
-  );
+  redirect("/tools/edit-video");
 }

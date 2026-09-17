@@ -18,13 +18,15 @@ interface AuthFormProps {
   mode: AuthMode;
   onBack: () => void;
   onSuccess: () => void;
+  /** Query string (e.g. "?next=%2Fedit%2Fimage") carried across the login ↔ signup switch. */
+  switchQuery?: string;
 }
 
-export function AuthForm({ mode, onBack, onSuccess }: AuthFormProps) {
+export function AuthForm({ mode, onBack, onSuccess, switchQuery = "" }: AuthFormProps) {
   return mode === "signup" ? (
-    <SignupForm onBack={onBack} onSuccess={onSuccess} />
+    <SignupForm onBack={onBack} onSuccess={onSuccess} switchQuery={switchQuery} />
   ) : (
-    <LoginForm onBack={onBack} onSuccess={onSuccess} />
+    <LoginForm onBack={onBack} onSuccess={onSuccess} switchQuery={switchQuery} />
   );
 }
 
@@ -36,7 +38,7 @@ function describeError(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-function SignupForm({ onBack, onSuccess }: Omit<AuthFormProps, "mode">) {
+function SignupForm({ onBack, onSuccess, switchQuery }: Omit<AuthFormProps, "mode">) {
   const signup = useSignup();
   const form = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
@@ -117,12 +119,12 @@ function SignupForm({ onBack, onSuccess }: Omit<AuthFormProps, "mode">) {
       <Button type="submit" size="lg" className="w-full" loading={busy}>
         Create account
       </Button>
-      <FormFooter onBack={onBack} switchHref="/login" switchLabel="Already have an account?" switchCta="Log in" />
+      <FormFooter onBack={onBack} switchHref={`/login${switchQuery}`} switchLabel="Already have an account?" switchCta="Log in" />
     </form>
   );
 }
 
-function LoginForm({ onBack, onSuccess }: Omit<AuthFormProps, "mode">) {
+function LoginForm({ onBack, onSuccess, switchQuery }: Omit<AuthFormProps, "mode">) {
   const login = useLogin();
   const form = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "" } });
   const { errors, isSubmitting } = form.formState;
@@ -169,7 +171,7 @@ function LoginForm({ onBack, onSuccess }: Omit<AuthFormProps, "mode">) {
       <Button type="submit" size="lg" className="w-full" loading={busy}>
         Log in
       </Button>
-      <FormFooter onBack={onBack} switchHref="/signup" switchLabel="New to Higgsfield?" switchCta="Sign up" />
+      <FormFooter onBack={onBack} switchHref={`/signup${switchQuery}`} switchLabel="New to Higgsfield?" switchCta="Sign up" />
     </form>
   );
 }

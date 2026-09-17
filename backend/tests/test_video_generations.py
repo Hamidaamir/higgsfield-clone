@@ -217,6 +217,33 @@ async def test_upload_rejects_non_images(
     assert "PNG, JPEG or WebP" in response.json()["error"]["message"]
 
 
+async def test_image_edit_with_reference(client: AsyncClient, runtime: GenerationRuntime) -> None:
+    await signup(client, USER_A)
+    upload = await client.post("/api/assets/upload", files={"file": ("ref.png", png_bytes(), "image/png")})
+    asset_id = upload.json()["id"]
+    rejected = await client.post(
+        "/api/generations/image",
+        json={"prompt": "make it snow", "model_id": "flux-1-schnell", "reference_asset_id": asset_id},
+    )
+    assert rejected.status_code == 422  # schnell has no reference support
+    response = await client.post(
+        "/api/generations/image",
+        json={"prompt": "make it snow", "model_id": "flux-2-klein", "reference_asset_id": asset_id},
+    )
+    assert response.status_code == 202, response.text
+    await runtime.wait_idle()
+    result = (await client.get(f"/api/generations/{response.json()['id']}")).json()
+    assert result["status"] == "completed" and result["settings"]["reference_asset_id"] == asset_id
+    from app.providers.fake_image import FakeImageProvider
+
+    provider = runtime.image_provider
+    assert isinstance(provider, FakeImageProvider)
+    assert provider.calls[-1][1].reference_image is not None
+    retried = await client.post(f"/api/generations/{result['id']}/retry")
+    assert retried.status_code == 202 and retried.json()["settings"]["reference_asset_id"] == asset_id
+    await runtime.wait_idle()
+
+
 async def test_reference_must_belong_to_user(client: AsyncClient, runtime: GenerationRuntime) -> None:
     await signup(client, USER_B)
     upload = await client.post("/api/assets/upload", files={"file": ("ref.png", png_bytes(), "image/png")})

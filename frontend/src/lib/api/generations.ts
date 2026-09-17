@@ -7,6 +7,8 @@ export interface ImageGenerationInput {
   aspect_ratio: string;
   batch_size: number;
   negative_prompt?: string;
+  /** Edit-capable models only (FLUX.2 Klein): an uploaded image asset owned by the caller. */
+  reference_asset_id?: string;
 }
 
 export interface VideoGenerationInput {

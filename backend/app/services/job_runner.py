@@ -101,7 +101,7 @@ async def _produce_outputs(
             ProviderErrorCode.MODEL_UNAVAILABLE, f"unknown model {generation.model_id}", retryable=False
         )
     if generation.type == GenerationType.IMAGE:
-        return await _generate_images(runtime, generation, spec.provider_model, spec.default_steps)
+        return await _generate_images(runtime, db, generation, spec.provider_model, spec.default_steps)
     if generation.type == GenerationType.VIDEO:
         return [await _generate_video(runtime, db, generation, spec.provider_model)]
     if generation.type == GenerationType.AUDIO:
@@ -112,7 +112,11 @@ async def _produce_outputs(
 
 
 async def _generate_images(
-    runtime: GenerationRuntime, generation: Generation, provider_model: str, default_steps: int | None
+    runtime: GenerationRuntime,
+    db: AsyncSession,
+    generation: Generation,
+    provider_model: str,
+    default_steps: int | None,
 ) -> list[ProviderOutput]:
     if runtime.image_provider is None:
         raise ProviderError(
@@ -122,6 +126,10 @@ async def _generate_images(
     width, height = ASPECT_RATIO_DIMENSIONS.get(str(settings.get("aspect_ratio", "1:1")), (1024, 1024))
     batch_size = int(settings.get("batch_size", 1))
     seed = settings.get("seed")
+    reference_bytes = None
+    reference_id = settings.get("reference_asset_id")
+    if reference_id:
+        reference_bytes = await _load_reference_image(runtime, db, generation, uuid.UUID(str(reference_id)))
     request = ImageGenerationRequest(
         prompt=generation.prompt,
         width=width,
@@ -129,6 +137,7 @@ async def _generate_images(
         steps=default_steps,
         negative_prompt=settings.get("negative_prompt"),
         seed=int(seed) if seed is not None else None,
+        reference_image=reference_bytes,
     )
     # Batch items run concurrently; each is an independent provider call.
     return list(

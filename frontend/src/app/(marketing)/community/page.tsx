@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { SectionHeader } from "@/components/discovery/primitives";
+import { CommunityGallery } from "@/features/community/community-gallery";
 
-export const metadata: Metadata = { title: "Explore the inside of every project" };
+export const metadata: Metadata = { title: "Community" };
 
 export default function CommunityPage() {
   return (
-    <PagePlaceholder
-      eyebrow="Community"
-      title="Explore the inside of every project"
-      description="See all prompts, assets, and how each project was created."
-    />
+    <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-6 sm:px-6">
+      <SectionHeader
+        as="h1"
+        title="Explore the inside of every project"
+        subtitle="A curated showcase with the prompt and model behind each piece. Hit Recreate to open the generator pre-filled."
+      />
+      <CommunityGallery />
+    </div>
   );
 }

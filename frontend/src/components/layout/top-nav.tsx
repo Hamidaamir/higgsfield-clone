@@ -16,6 +16,9 @@ import { cn } from "@/lib/utils";
 
 const HOVER_CLOSE_DELAY_MS = 120;
 
+const isActivePath = (pathname: string, href: string) =>
+  href === "/" ? pathname === "/" : pathname.startsWith(href.split("?")[0]);
+
 export function TopNav() {
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<MegaMenuKey | null>(null);
@@ -39,8 +42,6 @@ export function TopNav() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href.split("?")[0]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
@@ -48,9 +49,9 @@ export function TopNav() {
         <Logo />
 
         <nav aria-label="Primary" className="relative hidden min-w-0 flex-1 lg:block">
-          <ul className="flex items-center gap-0.5 overflow-x-auto scrollbar-none">
+          <ul className="flex items-center gap-0.5 overflow-x-auto scrollbar-none [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]">
             {primaryNav.map((item) => {
-              const active = isActive(item.href);
+              const active = isActivePath(pathname, item.href);
               const hasMenu = Boolean(item.menu);
               const expanded = hasMenu && openMenu === item.menu;
               return (
@@ -163,7 +164,7 @@ function MobileNav() {
                     onClick={close}
                     className={cn(
                       "flex items-center justify-between rounded-lg px-3 py-2.5 text-[15px] font-medium hover:bg-surface-muted",
-                      pathname === item.href ? "text-accent" : "text-text-primary",
+                      isActivePath(pathname, item.href) ? "text-accent" : "text-text-primary",
                     )}
                   >
                     {item.label}

@@ -42,6 +42,8 @@ export function AuthCard({ mode, nextPath }: AuthCardProps) {
   const [step, setStep] = useState<"methods" | "email">("methods");
   const text = copy[mode];
   const next = safeNextPath(nextPath);
+  // Keep the deep link when the visitor switches between login and signup.
+  const switchQuery = nextPath ? `?next=${encodeURIComponent(next)}` : "";
 
   const onSuccess = () => {
     toast.success(mode === "signup" ? "Account created. Welcome to Higgsfield!" : "Welcome back!");
@@ -92,13 +94,13 @@ export function AuthCard({ mode, nextPath }: AuthCardProps) {
                 </Button>
                 <p className="pt-2 text-center text-[13px] text-text-secondary">
                   {text.switchLabel}{" "}
-                  <Link href={text.switchHref} className="font-semibold text-accent hover:underline">
+                  <Link href={`${text.switchHref}${switchQuery}`} className="font-semibold text-accent hover:underline">
                     {text.switchCta}
                   </Link>
                 </p>
               </div>
             ) : (
-              <AuthForm mode={mode} onBack={() => setStep("methods")} onSuccess={onSuccess} />
+              <AuthForm mode={mode} onBack={() => setStep("methods")} onSuccess={onSuccess} switchQuery={switchQuery} />
             )}
           </div>
 

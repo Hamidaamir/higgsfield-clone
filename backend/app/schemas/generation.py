@@ -19,6 +19,8 @@ class ImageGenerationCreate(BaseModel):
     batch_size: int = Field(default=1, ge=1, le=4)
     negative_prompt: str | None = Field(default=None, max_length=NEGATIVE_PROMPT_MAX_LENGTH)
     seed: int | None = Field(default=None, ge=0, le=2**31 - 1)
+    # Optional reference image for edit-capable models; must be an image asset owned by the caller.
+    reference_asset_id: uuid.UUID | None = None
 
     @field_validator("prompt")
     @classmethod

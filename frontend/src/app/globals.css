@@ -15,12 +15,12 @@
   --border-strong: #363636;
   --text-primary: #f5f5f5;
   --text-secondary: #9b9b9b;
-  --text-muted: #6b6b6b;
+  --text-muted: #858585; /* ≥4.5:1 on every surface token */
   --accent: #d6ff00;
   --accent-hover: #e4ff4d;
   --accent-muted: rgba(214, 255, 0, 0.14);
   --accent-foreground: #0c0c0c;
-  --promo: #ff2d8a;
+  --promo: #e0006c; /* hot pink that keeps white badge text at AA contrast */
   --danger: #ff4d4f;
   --success: #4ade80;
   --warning: #f5b323;
