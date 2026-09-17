@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -248,6 +250,14 @@ async def test_reference_must_belong_to_user(client: AsyncClient, runtime: Gener
     await signup(client, USER_B)
     upload = await client.post("/api/assets/upload", files={"file": ("ref.png", png_bytes(), "image/png")})
     theirs = upload.json()["id"]
+    assert (await client.get(f"/api/assets/{theirs}")).status_code == 200
     await signup(client, USER_A)
     response = await client.post("/api/generations/video", json={**VIDEO, "reference_asset_id": theirs})
     assert response.status_code == 422
+    # Asset lookup is owner-scoped too: someone else's id is indistinguishable from a missing one.
+    assert (await client.get(f"/api/assets/{theirs}")).status_code == 404
+    assert (await client.get("/api/assets/not-a-uuid")).status_code == 422
+
+
+async def test_asset_lookup_requires_auth(client: AsyncClient) -> None:
+    assert (await client.get(f"/api/assets/{uuid.uuid4()}")).status_code == 401

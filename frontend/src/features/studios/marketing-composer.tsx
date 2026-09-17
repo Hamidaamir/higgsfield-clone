@@ -4,7 +4,8 @@ import { ArrowRight, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { MediaCard } from "@/components/discovery/media-card";
+import type { ArtTheme } from "@/components/discovery/artwork";
+import { MediaFrame } from "@/components/discovery/media-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -14,17 +15,18 @@ interface Template {
   name: string;
   kind: "Image" | "Video";
   seed: string;
+  theme: ArtTheme;
   build: (product: string, brand: string) => string;
   aspect: string;
 }
 
 const TEMPLATES: Template[] = [
-  { id: "product-shot", name: "Studio product shot", kind: "Image", seed: "mk-product", aspect: "1:1", build: (p, b) => `professional studio product photo of ${p}${b ? ` by ${b}` : ""}, seamless backdrop, soft key light, crisp reflections, advertising photography` },
-  { id: "lifestyle", name: "Lifestyle scene", kind: "Image", seed: "mk-lifestyle", aspect: "4:3", build: (p, b) => `${p}${b ? ` from ${b}` : ""} in a bright lifestyle scene, natural light, editorial composition, shallow depth of field` },
-  { id: "poster", name: "Bold poster", kind: "Image", seed: "mk-poster", aspect: "3:4", build: (p, b) => `bold graphic advertising poster for ${p}${b ? ` by ${b}` : ""}, strong typography-inspired composition, high contrast colors` },
-  { id: "ugc", name: "UGC creator clip", kind: "Video", seed: "mk-ugc", aspect: "9:16", build: (p, b) => `young creator excitedly showing ${p}${b ? ` from ${b}` : ""} to the camera, handheld phone video, bright apartment, ugc style` },
-  { id: "unboxing", name: "Unboxing", kind: "Video", seed: "mk-unboxing", aspect: "9:16", build: (p, b) => `hands unboxing ${p}${b ? ` by ${b}` : ""} on a wooden table, overhead shot, warm light, satisfying reveal` },
-  { id: "hero-motion", name: "Hero motion", kind: "Video", seed: "mk-hero", aspect: "16:9", build: (p, b) => `${p}${b ? ` by ${b}` : ""} rotating slowly on a dark reflective surface, dramatic rim light, product hero shot` },
+  { id: "product-shot", name: "Studio product shot", kind: "Image", seed: "mk-product", theme: "advertising", aspect: "1:1", build: (p, b) => `professional studio product photo of ${p}${b ? ` by ${b}` : ""}, seamless backdrop, soft key light, crisp reflections, advertising photography` },
+  { id: "lifestyle", name: "Lifestyle scene", kind: "Image", seed: "mk-lifestyle", theme: "editorial", aspect: "4:3", build: (p, b) => `${p}${b ? ` from ${b}` : ""} in a bright lifestyle scene, natural light, editorial composition, shallow depth of field` },
+  { id: "poster", name: "Bold poster", kind: "Image", seed: "mk-poster", theme: "editorial", aspect: "3:4", build: (p, b) => `bold graphic advertising poster for ${p}${b ? ` by ${b}` : ""}, strong typography-inspired composition, high contrast colors` },
+  { id: "ugc", name: "UGC creator clip", kind: "Video", seed: "mk-ugc", theme: "character", aspect: "9:16", build: (p, b) => `young creator excitedly showing ${p}${b ? ` from ${b}` : ""} to the camera, handheld phone video, bright apartment, ugc style` },
+  { id: "unboxing", name: "Unboxing", kind: "Video", seed: "mk-unboxing", theme: "advertising", aspect: "9:16", build: (p, b) => `hands unboxing ${p}${b ? ` by ${b}` : ""} on a wooden table, overhead shot, warm light, satisfying reveal` },
+  { id: "hero-motion", name: "Hero motion", kind: "Video", seed: "mk-hero", theme: "advertising", aspect: "16:9", build: (p, b) => `${p}${b ? ` by ${b}` : ""} rotating slowly on a dark reflective surface, dramatic rim light, product hero shot` },
 ];
 
 /** Marketing Studio: product + template → prompt → real image/video generator. */
@@ -80,12 +82,14 @@ export function MarketingComposer() {
                 aria-pressed={t.id === templateId}
                 className={cn("rounded-2xl text-left outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-accent", t.id === templateId && "ring-2 ring-accent")}
               >
-                <MediaCard href={href} seed={t.seed} alt={t.name} ratio="4 / 5" className="pointer-events-none">
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-3 pt-8">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">{t.kind}</p>
-                    <p className="text-sm font-semibold text-white">{t.name}</p>
-                  </div>
-                </MediaCard>
+                <span className="relative block overflow-hidden rounded-2xl border border-border bg-surface-elevated" style={{ aspectRatio: "4 / 5" }}>
+                  <MediaFrame seed={t.seed} theme={t.theme} alt={t.name} />
+                  <span className="grain absolute inset-0" aria-hidden />
+                  <span className="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/90 to-transparent p-3 pt-8">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wider text-accent">{t.kind}</span>
+                    <span className="block text-sm font-semibold text-white">{t.name}</span>
+                  </span>
+                </span>
               </button>
             ))}
           </div>

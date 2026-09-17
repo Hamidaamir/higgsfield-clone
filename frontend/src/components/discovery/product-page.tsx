@@ -7,7 +7,7 @@ import { MediaCard } from "@/components/discovery/media-card";
 import { SectionHeader } from "@/components/discovery/primitives";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { artFor, photoUrl } from "@/lib/photos";
+import { Artwork, themeForSeed } from "@/components/discovery/artwork";
 import { cn } from "@/lib/utils";
 
 export interface ProductFeature {
@@ -55,12 +55,9 @@ export function ProductPage({
 }: ProductPageProps) {
   return (
     <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-4 sm:px-6">
-      <section className="relative overflow-hidden rounded-3xl border border-border" style={{ backgroundImage: artFor(seed) }}>
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-cover bg-center opacity-35"
-          style={{ backgroundImage: `url(${photoUrl(`${seed}-hero`, 1600, 900)})` }}
-        />
+      <section className="relative overflow-hidden rounded-3xl border border-border">
+        <Artwork seed={`${seed}-hero`} theme={themeForSeed(seed)} fit="wide" />
+        <div className="grain absolute inset-0" aria-hidden />
         <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/10" aria-hidden />
         <div className="relative flex min-h-[380px] flex-col justify-end gap-4 p-6 sm:p-10 lg:max-w-[60%]">
           <div className="flex flex-wrap items-center gap-2">
@@ -102,7 +99,7 @@ export function ProductPage({
 
       {features?.length ? (
         <section className="mt-12" aria-label="Features">
-          <div className={cn("grid gap-4 sm:grid-cols-2", features.length >= 3 && "lg:grid-cols-3")}>
+          <div className={cn("grid gap-4 sm:grid-cols-2", features.length % 3 === 0 ? "lg:grid-cols-3" : features.length === 4 ? "xl:grid-cols-4" : features.length >= 5 && "lg:grid-cols-3")}>
             {features.map((feature) => {
               const body = (
                 <>

@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { Artwork, type ArtTheme } from "@/components/discovery/artwork";
 import { cn } from "@/lib/utils";
 
 /** Lime uppercase section title + subtitle, optional right-aligned CTA (reference: "VISUAL EFFECTS"). */
@@ -141,14 +142,17 @@ export function WideBanner({
 
 function BannerArt({ seed }: { seed: string }) {
   const tilts = [-12, -4, 6, 14];
+  const themes: ArtTheme[] = ["editorial", "character", "cinematic", "advertising"];
   return (
     <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 hidden w-[52%] items-center justify-end gap-3 pr-8 lg:flex">
       {tilts.map((tilt, i) => (
         <div
           key={i}
-          className="h-44 w-32 shrink-0 rounded-2xl border border-white/20 bg-cover bg-center shadow-card"
-          style={{ transform: `rotate(${tilt}deg) translateY(${(i % 2) * 18 - 9}px)`, backgroundImage: `url(https://picsum.photos/seed/${seed}-${i}/320/440)` }}
-        />
+          className="relative h-44 w-32 shrink-0 overflow-hidden rounded-2xl border border-white/20 shadow-card"
+          style={{ transform: `rotate(${tilt}deg) translateY(${(i % 2) * 18 - 9}px)` }}
+        >
+          <Artwork seed={`${seed}-${i}`} theme={themes[i % themes.length]} />
+        </div>
       ))}
     </div>
   );

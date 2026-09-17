@@ -25,7 +25,7 @@ await page.goto(`${base}/generate/audio`);
 await page.waitForURL(/\/login\?next=%2Fgenerate%2Faudio/);
 check("anonymous /generate/audio redirects to login", true);
 
-await page.goto(`${base}/signup?next=%2Fgenerate%2Faudio`);
+await page.goto(`${base}/signup?next=%2Fgenerate%2Faudio`, { waitUntil: "networkidle" });
 await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#signup-name", "Audio Tester");
 await page.fill("#signup-email", email);

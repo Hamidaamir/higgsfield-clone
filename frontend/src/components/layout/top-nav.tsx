@@ -1,16 +1,17 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { Globe, Menu, Sparkles, Tag, X } from "lucide-react";
+import { Check, Globe, Menu, Sparkles, Tag, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import { AccountControls } from "@/components/layout/account-controls";
 import { Logo } from "@/components/layout/logo";
 import { MegaMenu } from "@/components/layout/mega-menu";
 import { Badge, navBadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { megaMenus, primaryNav, type MegaMenuKey } from "@/lib/config/nav";
 import { cn } from "@/lib/utils";
 
@@ -116,19 +117,50 @@ export function TopNav() {
             <Sparkles className="size-3.5" aria-hidden />
             Enterprise
           </Link>
-          <button
-            type="button"
-            aria-label="Language"
-            className="hidden size-8 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-muted hover:text-text-primary md:flex"
-          >
-            <Globe className="size-4" />
-          </button>
+          <LanguageMenu />
           <span className="mx-1 hidden h-5 w-px bg-border md:block" aria-hidden />
-          <AccountControls />
+          {/* useSearchParams inside; the skeleton keeps the nav width stable while it resolves. */}
+          <Suspense fallback={<span className="h-8 w-24 rounded-lg skeleton-shimmer" aria-hidden />}>
+            <AccountControls />
+          </Suspense>
           <MobileNav />
         </div>
       </div>
     </header>
+  );
+}
+
+const LANGUAGES = ["English", "Español", "Português", "Deutsch", "日本語", "한국어"];
+
+/** The reference has a language switcher; this build ships English only, and says so. */
+function LanguageMenu() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Language"
+          className="hidden size-8 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-muted hover:text-text-primary data-[state=open]:bg-surface-muted md:flex"
+        >
+          <Globe className="size-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-52">
+        <p className="px-2 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-text-secondary">Language</p>
+        <ul className="space-y-0.5">
+          {LANGUAGES.map((lang, i) => (
+            <li
+              key={lang}
+              aria-current={i === 0 ? "true" : undefined}
+              className={cn("flex items-center justify-between rounded-lg px-2 py-1.5 text-[13px]", i === 0 ? "bg-surface-muted font-semibold text-text-primary" : "text-text-muted")}
+            >
+              {lang}
+              {i === 0 ? <Check className="size-3.5 text-accent" aria-hidden /> : <span className="text-[10px]">Soon</span>}
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
   );
 }
 

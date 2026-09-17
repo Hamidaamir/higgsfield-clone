@@ -1,6 +1,7 @@
 "use client";
 
 import { AudioLines, Globe, Image as ImageIcon, Info, Mic, Music, SlidersHorizontal, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { BatchStepper } from "@/components/generator/batch-stepper";
@@ -34,9 +35,10 @@ export interface AudioSidebarProps {
 }
 
 const MODE_TABS = [
-  { id: "tts", label: "Text to Speech", available: true },
-  { id: "voice-change", label: "Voice Change", available: false },
-  { id: "translate", label: "Translate", available: false },
+  // Voice Change / Translate have no free provider; their tabs open the honest preview pages.
+  { id: "tts", label: "Text to Speech", href: null },
+  { id: "voice-change", label: "Voice Change", href: "/tools/voice-change" },
+  { id: "translate", label: "Translate", href: "/tools/translate" },
 ] as const;
 
 /** Left control column of the audio workspace (reference/screenshots/212513.png). */
@@ -76,48 +78,41 @@ export function AudioSidebar({
       className="flex flex-col gap-3 rounded-3xl border border-border bg-surface p-3"
     >
       <div role="tablist" aria-label="Audio mode" className="flex gap-1 border-b border-border pb-2">
-        {MODE_TABS.map((tab) => {
-          const active = tab.id === "tts";
-          const button = (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              aria-disabled={!tab.available || undefined}
-              className={cn(
-                "relative px-2 pb-1.5 pt-1 text-[13px] font-semibold",
-                active ? "text-text-primary" : "cursor-not-allowed text-text-muted",
-              )}
-            >
+        {MODE_TABS.map((tab) =>
+          tab.href ? (
+            <Tooltip key={tab.id} content="Preview surface — no free provider yet">
+              <Link href={tab.href} role="tab" aria-selected={false} className="relative px-2 pb-1.5 pt-1 text-[13px] font-semibold text-text-muted hover:text-text-secondary">
+                {tab.label}
+              </Link>
+            </Tooltip>
+          ) : (
+            <button key={tab.id} type="button" role="tab" aria-selected className="relative px-2 pb-1.5 pt-1 text-[13px] font-semibold text-text-primary">
               {tab.label}
-              {active ? <span className="absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-accent" aria-hidden /> : null}
+              <span className="absolute inset-x-2 -bottom-2 h-0.5 rounded-full bg-accent" aria-hidden />
             </button>
-          );
-          return tab.available ? button : <Tooltip key={tab.id} content="Coming later in this build">{button}</Tooltip>;
-        })}
+          ),
+        )}
       </div>
 
-      {/* Reference upload (voice cloning) exists in the product but no free provider supports it. */}
-      <Tooltip content="Voice cloning and audio references arrive with Voice Change">
-        <div
-          aria-disabled="true"
-          className="relative flex cursor-not-allowed flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-surface px-4 py-5 text-center opacity-70"
-        >
-          <span className="absolute right-3 top-3 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-text-secondary">
-            Optional
-          </span>
-          <div className="flex items-center gap-1.5">
-            {[AudioLines, Music, ImageIcon].map((Icon, i) => (
-              <span key={i} className="flex size-8 items-center justify-center rounded-full border border-border bg-surface-muted text-text-secondary">
-                <Icon className="size-4" aria-hidden />
-              </span>
-            ))}
-          </div>
-          <p className="text-sm font-semibold">Upload media</p>
-          <p className="text-xs text-text-secondary">Up to 3 voices, audios or an image</p>
+      {/* Reference upload (voice cloning) exists in the product but no free provider supports it,
+          so the block reads as a preview rather than a dropzone that silently ignores clicks. */}
+      <Link
+        href="/tools/voice-change"
+        className="relative flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-surface px-4 py-5 text-center transition-colors hover:border-border-strong"
+      >
+        <span className="absolute right-3 top-3 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-text-secondary">
+          Preview
+        </span>
+        <div className="flex items-center gap-1.5">
+          {[AudioLines, Music, ImageIcon].map((Icon, i) => (
+            <span key={i} className="flex size-8 items-center justify-center rounded-full border border-border bg-surface-muted text-text-secondary">
+              <Icon className="size-4" aria-hidden />
+            </span>
+          ))}
         </div>
-      </Tooltip>
+        <p className="text-sm font-semibold">Upload media</p>
+        <p className="text-xs text-text-secondary">Voice cloning and audio references arrive with Voice Change</p>
+      </Link>
 
       <div className="rounded-2xl border border-border bg-surface-elevated p-3">
         <div className="flex items-center justify-between">

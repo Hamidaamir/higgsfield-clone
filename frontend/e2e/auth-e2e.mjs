@@ -16,7 +16,7 @@ page.on("pageerror", (e) => consoleErrors.push(String(e)));
 page.on("response", (r) => r.status() >= 400 && console.log("HTTP", r.status(), r.url()));
 
 // Restart the uvicorn server to pick up the errors.py change is the caller's job; here we just drive the UI.
-await page.goto(`${base}/signup`);
+await page.goto(`${base}/signup`, { waitUntil: "networkidle" });
 await page.screenshot({ path: `${shots}/01-signup-methods.png` });
 await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.screenshot({ path: `${shots}/02-signup-form.png` });

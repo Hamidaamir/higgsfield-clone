@@ -1,7 +1,18 @@
 /** Curated discovery content for Explore. Product/catalog content, never user history. */
+import type { ArtTheme } from "@/components/discovery/artwork";
+import type { ShowcaseMedia } from "@/components/discovery/media-card";
+
+/** Real generations produced on this stack during the provider smoke tests, shipped locally. */
+export const SHOWCASE = {
+  fluxLimeJacket: { kind: "image", src: "/showcase/flux-lime-jacket.jpg" },
+  ltxPaperBoat: { kind: "video", src: "/showcase/ltx-paper-boat.mp4" },
+  auraWelcome: "/showcase/aura-welcome.mp3",
+} as const satisfies Record<string, ShowcaseMedia | string>;
 
 export interface FeatureCard {
   seed: string;
+  theme?: ArtTheme;
+  media?: ShowcaseMedia;
   overlay: string;
   overlayPosition?: "bottom-right" | "top-left" | "center";
   title: string;
@@ -10,14 +21,18 @@ export interface FeatureCard {
 }
 
 export const featureCards: FeatureCard[] = [
-  { seed: "hf-motion-designer", overlay: "ANY TRACK\nANY MOOD", title: "Higgsfield AI Motion Designer", subtitle: "ChatGPT can now do motion design in After Effects.", href: "/integrations/chatgpt" },
-  { seed: "hf-effects", overlay: "/INCLINE", title: "Higgsfield Effects", subtitle: "Viral video presets, ready to drop into your prompt.", href: "/effects" },
-  { seed: "hf-genjutsu", overlay: "CAMERA\nMOVEMENT", overlayPosition: "top-left", title: "Higgsfield Genjutsu", subtitle: "One upload in. Endless new visions out.", href: "/genjutsu" },
-  { seed: "hf-klein-edit", overlay: "SUNBURST", title: "FLUX.2 Klein Edits", subtitle: "Sharper edits with more natural light and texture.", href: "/edit/image" },
+  { seed: "hf-motion-designer", theme: "audio", overlay: "ANY TRACK\nANY MOOD", title: "Higgsfield AI Motion Designer", subtitle: "ChatGPT can now do motion design in After Effects.", href: "/integrations/chatgpt" },
+  { seed: "hf-effects", theme: "effects", overlay: "/INCLINE", title: "Higgsfield Effects", subtitle: "Viral video presets, ready to drop into your prompt.", href: "/effects" },
+  { seed: "hf-genjutsu", theme: "cinematic", overlay: "CAMERA\nMOVEMENT", overlayPosition: "top-left", title: "Higgsfield Genjutsu", subtitle: "One upload in. Endless new visions out.", href: "/genjutsu" },
+  { seed: "hf-klein-edit", media: SHOWCASE.fluxLimeJacket, overlay: "SUNBURST", title: "FLUX.2 Klein Edits", subtitle: "Sharper edits with more natural light and texture.", href: "/edit/image" },
 ];
 
 export interface GalleryItem {
   seed: string;
+  theme?: ArtTheme;
+  media?: ShowcaseMedia;
+  /** Small chip inside the frame, e.g. the model that produced a real generation. */
+  chip?: string;
   href: string;
   alt: string;
   /** Portrait items get a taller frame in mixed grids. */
@@ -35,9 +50,10 @@ export interface GallerySection {
   ratio?: string;
 }
 
-const gallery = (prefix: string, href: string, count: number, portraits: number[] = []): GalleryItem[] =>
+const gallery = (prefix: string, href: string, themes: ArtTheme[], count: number, portraits: number[] = []): GalleryItem[] =>
   Array.from({ length: count }, (_, i) => ({
     seed: `${prefix}-${i + 1}`,
+    theme: themes[i % themes.length],
     href,
     alt: `${prefix.replace(/-/g, " ")} example ${i + 1}`,
     portrait: portraits.includes(i),
@@ -48,7 +64,7 @@ export const gallerySections: GallerySection[] = [
     id: "effects",
     title: "Visual effects",
     subtitle: "Big-budget visual effects, from explosions to surreal transformations.",
-    items: gallery("visual-effects", "/effects", 5, [1, 3]),
+    items: gallery("visual-effects", "/effects", ["effects", "cinematic", "effects", "character", "effects"], 5, [1, 3]),
     viewAll: { label: "View all presets", href: "/effects" },
     cta: { label: "Try for free", href: "/effects" },
     ratio: "3 / 4",
@@ -57,34 +73,41 @@ export const gallerySections: GallerySection[] = [
     id: "video",
     title: "LTX Video",
     subtitle: "Text and image to video — generated in seconds on the free tier.",
-    items: gallery("ltx-video", "/generate/video", 4),
+    items: [
+      { seed: "ltx-paper-boat", media: SHOWCASE.ltxPaperBoat, chip: "LTX Video · real output", href: "/generate/video", alt: "Paper boat drifting on a pond at golden hour, generated with LTX Video" },
+      ...gallery("ltx-video", "/generate/video", ["cinematic", "scenic", "character"], 3),
+    ],
     viewAll: { label: "View all of LTX Video", href: "/video" },
   },
   {
     id: "image",
     title: "FLUX.1 Schnell",
     subtitle: "Fast photographic and illustrative stills with near-instant results.",
-    items: gallery("flux-schnell", "/generate/image", 4),
+    items: [
+      { seed: "flux-lime-jacket", media: SHOWCASE.fluxLimeJacket, chip: "FLUX.1 Schnell · real output", href: "/generate/image", alt: "Portrait in a lime jacket on a neon street, generated with FLUX.1 Schnell" },
+      ...gallery("flux-schnell", "/generate/image", ["editorial", "scenic", "character"], 3),
+    ],
     viewAll: { label: "View all of FLUX.1 Schnell", href: "/image" },
   },
   {
     id: "marketing",
     title: "Marketing Studio",
     subtitle: "See what creators and brands are making with Marketing Studio.",
-    items: gallery("marketing-studio", "/marketing-studio", 4),
+    items: gallery("marketing-studio", "/marketing-studio", ["advertising"], 4),
     viewAll: { label: "View all of Marketing Studio", href: "/marketing-studio" },
   },
   {
     id: "soul",
     title: "Higgsfield Soul Cinema",
     subtitle: "Explore the community gallery for stunning cinematic stills.",
-    items: gallery("soul-cinema", "/tools/cinematic-cameras", 4),
+    items: gallery("soul-cinema", "/tools/cinematic-cameras", ["editorial", "cinematic"], 4),
     viewAll: { label: "View all of Soul Cinema", href: "/tools/cinematic-cameras" },
   },
 ];
 
 export interface ProjectCard {
   seed: string;
+  theme: ArtTheme;
   title: string;
   author: string;
   visibility: "Public";
@@ -92,14 +115,14 @@ export interface ProjectCard {
 }
 
 export const projectCards: ProjectCard[] = [
-  { seed: "project-loving-me", title: "If you stop loving me, I'll die — I don't like dying, but…", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
-  { seed: "project-cully-hill", title: "Cully Hill Boys", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
-  { seed: "project-red-flag", title: "Red Flag", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
-  { seed: "project-kok-boru", title: "Kok Boru", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
-  { seed: "project-adiliada", title: "Adiliada", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
-  { seed: "project-oneiric", title: "Oneiric", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
-  { seed: "project-zephyr", title: "Zephyr Special", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
-  { seed: "project-hell-grind", title: "Hell Grind", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
+  { seed: "project-loving-me", theme: "cinematic", title: "If you stop loving me, I'll die — I don't like dying, but…", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
+  { seed: "project-cully-hill", theme: "character", title: "Cully Hill Boys", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
+  { seed: "project-red-flag", theme: "effects", title: "Red Flag", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
+  { seed: "project-kok-boru", theme: "scenic", title: "Kok Boru", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
+  { seed: "project-adiliada", theme: "editorial", title: "Adiliada", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
+  { seed: "project-oneiric", theme: "character", title: "Oneiric", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
+  { seed: "project-zephyr", theme: "cinematic", title: "Zephyr Special", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
+  { seed: "project-hell-grind", theme: "effects", title: "Hell Grind", author: "Higgsfield Studio", visibility: "Public", href: "/community" },
 ];
 
 export const moreFeatures: { label: string; href: string }[] = [

@@ -21,7 +21,7 @@ await page.waitForURL(/\/login\?next=%2Fgenerate%2Fvideo/);
 check("anonymous /generate/video redirects to login", true);
 
 // sign up
-await page.goto(`${base}/signup?next=%2Fgenerate%2Fvideo`);
+await page.goto(`${base}/signup?next=%2Fgenerate%2Fvideo`, { waitUntil: "networkidle" });
 await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#signup-name", "Video Tester");
 await page.fill("#signup-email", email);

@@ -3,6 +3,7 @@
 import { Gem } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Artwork, type ArtTheme } from "@/components/discovery/artwork";
 import { cn } from "@/lib/utils";
 
 interface Slide {
@@ -10,8 +11,8 @@ interface Slide {
   title: string;
   subtitle: string;
   chip: string;
-  /** Layered gradients stand in for the editorial imagery in the reference. */
-  art: string;
+  /** Locally rendered artwork stands in for the editorial imagery in the reference. */
+  theme: ArtTheme;
 }
 
 const slides: Slide[] = [
@@ -20,28 +21,28 @@ const slides: Slide[] = [
     title: "Seedance 2.0 4K",
     subtitle: "The most advanced AI video model, now in crisp 4K.",
     chip: "4K Video",
-    art: "radial-gradient(120% 80% at 20% 10%, #ff2d8a 0%, transparent 55%), radial-gradient(90% 90% at 90% 90%, #3b1d64 0%, transparent 60%), linear-gradient(180deg, #1a1030 0%, #05050a 100%)",
+    theme: "cinematic",
   },
   {
     label: "Nano Banana Pro",
     title: "Nano Banana Pro 4K",
     subtitle: "The best image model, for the best price in the industry, only on Higgsfield.",
     chip: "4K Resolution",
-    art: "radial-gradient(100% 70% at 70% 20%, #d6ff00 0%, transparent 50%), radial-gradient(80% 80% at 10% 90%, #1f5a3a 0%, transparent 60%), linear-gradient(180deg, #14170a 0%, #050605 100%)",
+    theme: "character",
   },
   {
     label: "Higgsfield Soul",
     title: "Higgsfield Soul 2.0",
     subtitle: "A culture-native photo model built for fashion, aesthetics and creative expression.",
     chip: "Photo",
-    art: "radial-gradient(90% 70% at 30% 30%, #ff8a3d 0%, transparent 55%), radial-gradient(90% 90% at 90% 80%, #7a1f3f 0%, transparent 60%), linear-gradient(180deg, #1c0f12 0%, #060405 100%)",
+    theme: "editorial",
   },
   {
     label: "Cinematic App",
     title: "Cinema Studio 4.0",
     subtitle: "Camera, lens and lighting control with an AI director on every shot.",
     chip: "Studio",
-    art: "radial-gradient(100% 80% at 80% 10%, #2f7cff 0%, transparent 55%), radial-gradient(80% 80% at 10% 90%, #0b2f4f 0%, transparent 60%), linear-gradient(180deg, #0a1220 0%, #04060a 100%)",
+    theme: "tools",
   },
 ];
 
@@ -60,14 +61,11 @@ export function AuthPromoPane({ className }: { className?: string }) {
 
   return (
     <div className={cn("relative overflow-hidden bg-black", className)} aria-live="polite">
-      {slides.map((s, i) => (
-        <div
-          key={s.label}
-          aria-hidden
-          className={cn("absolute inset-0 transition-opacity duration-700", i === index ? "opacity-100" : "opacity-0")}
-          style={{ backgroundImage: s.art }}
-        />
-      ))}
+      {/* Only the active slide is mounted: four full artworks made the auth page slow to hydrate. */}
+      <div key={slide.label} aria-hidden className="absolute inset-0 fade-in">
+        <Artwork seed={`auth-${slide.label}`} theme={slide.theme} />
+        <div className="grain absolute inset-0" />
+      </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" aria-hidden />
       <div className="absolute inset-x-0 bottom-0 p-6">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-semibold text-white ring-1 ring-white/15">

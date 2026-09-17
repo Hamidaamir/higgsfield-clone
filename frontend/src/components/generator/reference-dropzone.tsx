@@ -13,10 +13,22 @@ interface ReferenceDropzoneProps {
   onSelect: (file: File) => void;
   onClear: () => void;
   disabled?: boolean;
+  /** Chip on the preview and empty-state title; defaults to the video workspace wording. */
+  purpose?: string;
+  title?: string;
 }
 
 /** "Add references" panel from the video reference. Only images are accepted today. */
-export function ReferenceDropzone({ previewUrl, uploading, error, onSelect, onClear, disabled }: ReferenceDropzoneProps) {
+export function ReferenceDropzone({
+  previewUrl,
+  uploading,
+  error,
+  onSelect,
+  onClear,
+  disabled,
+  purpose = "Image to video",
+  title = "Add references",
+}: ReferenceDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -39,7 +51,7 @@ export function ReferenceDropzone({ previewUrl, uploading, error, onSelect, onCl
           </div>
         ) : (
           <span className="absolute bottom-2 left-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-semibold text-white">
-            Image to video
+            {purpose}
           </span>
         )}
         <button
@@ -90,7 +102,7 @@ export function ReferenceDropzone({ previewUrl, uploading, error, onSelect, onCl
             </span>
           </Tooltip>
         </div>
-        <p className="text-sm font-semibold">Add references</p>
+        <p className="text-sm font-semibold">{title}</p>
         <p className="text-xs text-text-secondary">Image (PNG, JPEG, WebP, up to 10 MB)</p>
         <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-text-muted">
           <Upload className="size-3.5" aria-hidden />

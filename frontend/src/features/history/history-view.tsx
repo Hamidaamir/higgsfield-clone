@@ -190,9 +190,21 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
               title={empty.title}
               description={empty.description}
               action={
-                <Button asChild>
-                  <Link href={empty.href}>{empty.cta}</Link>
-                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <Button asChild>
+                    <Link href={empty.href}>{empty.cta}</Link>
+                  </Button>
+                  {filter === "all" ? (
+                    <>
+                      <Button asChild variant="secondary">
+                        <Link href="/generate/video">Make a video</Link>
+                      </Button>
+                      <Button asChild variant="secondary">
+                        <Link href="/generate/audio">Generate speech</Link>
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
               }
             />
           )

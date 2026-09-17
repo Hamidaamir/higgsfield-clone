@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+import { Artwork, type ArtTheme } from "@/components/discovery/artwork";
 import { MediaCard } from "@/components/discovery/media-card";
 import { SectionHeader } from "@/components/discovery/primitives";
 import { StatusChip } from "@/components/discovery/product-page";
@@ -8,8 +9,14 @@ import { LogoMark } from "@/components/layout/logo";
 import { Badge, navBadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { catalogModelHref, catalogModelsFor } from "@/lib/config/catalog-models";
+import { SHOWCASE } from "@/lib/config/explore";
 import { toolHref, toolsByCategory, type ToolCategory } from "@/lib/config/tools";
-import { artFor } from "@/lib/photos";
+
+const MODEL_THEMES: Record<ToolCategory, ArtTheme[]> = {
+  image: ["editorial", "character", "scenic", "advertising"],
+  video: ["cinematic", "scenic", "effects", "character"],
+  audio: ["audio"],
+};
 
 const COPY: Record<ToolCategory, { title: string; subtitle: string; cta: string; href: string; seed: string }> = {
   image: {
@@ -42,7 +49,9 @@ export function CatalogPage({ category }: { category: ToolCategory }) {
   const models = catalogModelsFor(category);
   return (
     <div className="mx-auto max-w-[1400px] px-4 pb-10 pt-4 sm:px-6">
-      <section className="relative overflow-hidden rounded-3xl border border-border p-6 sm:p-10" style={{ backgroundImage: artFor(copy.seed) }}>
+      <section className="relative overflow-hidden rounded-3xl border border-border p-6 sm:p-10">
+        <Artwork seed={copy.seed} theme={category === "image" ? "editorial" : category === "video" ? "cinematic" : "audio"} fit="wide" />
+        <div className="grain absolute inset-0" aria-hidden />
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent" aria-hidden />
         <div className="relative max-w-2xl">
           <h1 className="display-heading text-4xl sm:text-6xl">{copy.title}</h1>
@@ -58,6 +67,12 @@ export function CatalogPage({ category }: { category: ToolCategory }) {
               <Link href="/history">Your History</Link>
             </Button>
           </div>
+          {category === "audio" ? (
+            <div className="mt-6 flex max-w-md flex-col gap-1.5 rounded-2xl border border-white/15 bg-black/50 p-3 backdrop-blur">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-accent">Aura-1 · real output from this build</span>
+              <audio controls preload="metadata" src={SHOWCASE.auraWelcome} aria-label="Sample: Welcome to Higgsfield, generated with Aura-1" className="h-9 w-full" />
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -89,8 +104,16 @@ export function CatalogPage({ category }: { category: ToolCategory }) {
       <section className="mt-12" aria-label="Models">
         <SectionHeader title="Models" subtitle="Models with a lime check run for real on the free tier; others are catalog entries from the reference product." tone="white" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {models.map((model) => (
-            <MediaCard key={model.slug} href={catalogModelHref(model)} seed={model.seed} alt={model.name} ratio="16 / 10">
+          {models.map((model, i) => (
+            <MediaCard
+              key={model.slug}
+              href={catalogModelHref(model)}
+              seed={model.seed}
+              theme={MODEL_THEMES[category][i % MODEL_THEMES[category].length]}
+              media={model.slug === "flux-1-schnell" ? SHOWCASE.fluxLimeJacket : model.slug === "ltx-video" ? SHOWCASE.ltxPaperBoat : undefined}
+              alt={model.name}
+              ratio="16 / 10"
+            >
               <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2.5">
                 {model.badge ? <Badge variant={navBadgeVariant(model.badge)}>{model.badge}</Badge> : <span />}
                 <StatusChip status={model.registryId ? "available" : "preview"} />

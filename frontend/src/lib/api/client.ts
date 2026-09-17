@@ -43,7 +43,12 @@ async function parseError(response: Response): Promise<ApiError> {
   } catch {
     /* non-JSON error body */
   }
-  return new ApiError(response.status, "http_error", `Request failed (${response.status})`);
+  // A non-JSON 5xx means the proxy could not reach the API (down, restarting or cold-starting),
+  // so it is treated like a network failure: retried once, then explained in plain words.
+  if (response.status >= 500) {
+    return new ApiError(0, "unreachable", "The server isn't reachable right now. Please try again in a moment.");
+  }
+  return new ApiError(response.status, "http_error", `Something went wrong (${response.status}). Please try again.`);
 }
 
 async function attempt<T>(path: string, options: RequestOptions): Promise<T> {

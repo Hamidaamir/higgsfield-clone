@@ -16,7 +16,7 @@ page.on("console", (m) => m.type() === "error" && consoleErrors.push(m.text()));
 page.on("pageerror", (e) => consoleErrors.push(String(e)));
 
 // Sign up, land on the generator
-await page.goto(`${base}/signup`);
+await page.goto(`${base}/signup`, { waitUntil: "networkidle" });
 await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#signup-name", "Image Tester");
 await page.fill("#signup-email", email);

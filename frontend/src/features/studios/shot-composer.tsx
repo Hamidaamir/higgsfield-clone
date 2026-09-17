@@ -4,6 +4,7 @@ import { ArrowRight, Clapperboard } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { Artwork } from "@/components/discovery/artwork";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -73,7 +74,15 @@ export function ShotComposer() {
           <Clapperboard className="size-4 text-accent" aria-hidden />
           Shot 01 · Director prompt
         </div>
-        <p className="mt-4 flex-1 rounded-2xl border border-border bg-surface-elevated p-4 text-[15px] leading-relaxed">{prompt}</p>
+        {/* Storyboard frame: the look changes with lighting/grade/camera so the deck feels live. It is a
+            composition sketch, not a render — the real clip comes from LTX Video after "Generate this shot". */}
+        <div className="relative mt-4 flex-1 overflow-hidden rounded-2xl border border-border bg-surface-elevated" style={{ minHeight: 220 }}>
+          <Artwork seed={`shot-${camera}-${movement}-${lighting}-${grade}`} theme={lighting === "studio" ? "advertising" : grade === "bw" ? "editorial" : "cinematic"} />
+          <div className="grain absolute inset-0" aria-hidden />
+          <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">Storyboard sketch</span>
+          <span className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">16:9 · LTX Video</span>
+        </div>
+        <p className="mt-3 rounded-2xl border border-border bg-surface-elevated p-4 text-[15px] leading-relaxed">{prompt}</p>
         <p className="mt-3 text-xs text-text-secondary">
           Cinema Studio composes the shot; generation runs through the same LTX Video workflow as Create Video, so the clip lands in your History.
         </p>

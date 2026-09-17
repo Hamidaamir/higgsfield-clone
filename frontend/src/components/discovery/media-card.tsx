@@ -1,17 +1,25 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
+import { Artwork, type ArtTheme } from "@/components/discovery/artwork";
 import { Badge, navBadgeVariant } from "@/components/ui/badge";
-import { artFor, photoUrl } from "@/lib/photos";
 import { cn } from "@/lib/utils";
+
+/** A real generation shipped with the app (see `public/showcase`), used instead of artwork. */
+export interface ShowcaseMedia {
+  kind: "image" | "video";
+  src: string;
+  /** Poster frame for videos; images reuse `src`. */
+  poster?: string;
+}
 
 interface MediaCardProps {
   href: string;
   seed: string;
   alt: string;
+  theme?: ArtTheme;
+  media?: ShowcaseMedia;
   /** CSS aspect ratio, e.g. "16 / 9". */
   ratio?: string;
   /** Poster-style text drawn onto the image (like "KEEP", "/INCLINE" in the reference). */
@@ -28,11 +36,13 @@ interface MediaCardProps {
   sizes?: string;
 }
 
-/** Discovery card: seeded photo with graceful gradient fallback, optional poster text and caption. */
+/** Discovery card: locally rendered artwork (or a shipped real generation), poster text, caption. */
 export function MediaCard({
   href,
   seed,
   alt,
+  theme,
+  media,
   ratio = "16 / 9",
   overlay,
   overlayPosition = "bottom-right",
@@ -44,26 +54,14 @@ export function MediaCard({
   priority,
   sizes = "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw",
 }: MediaCardProps) {
-  const [failed, setFailed] = useState(false);
   return (
-    <Link href={href} className={cn("group block min-w-0", className)}>
-      <div
-        className="relative overflow-hidden rounded-2xl border border-border bg-surface-elevated"
-        style={{ aspectRatio: ratio, backgroundImage: failed ? artFor(seed) : undefined }}
-      >
-        {!failed ? (
-          <Image
-            src={photoUrl(seed, 960, 640)}
-            alt={alt}
-            fill
-            unoptimized
-            priority={priority}
-            sizes={sizes}
-            onError={() => setFailed(true)}
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-80" aria-hidden />
+    <Link href={href} aria-label={title ? undefined : alt} className={cn("group block min-w-0", className)}>
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-elevated" style={{ aspectRatio: ratio }}>
+        <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.03]">
+          <MediaFrame seed={seed} alt={alt} theme={theme} media={media} priority={priority} sizes={sizes} />
+        </div>
+        <div className="grain pointer-events-none absolute inset-0" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-80" aria-hidden />
         {overlay ? (
           <span
             className={cn(
@@ -91,4 +89,31 @@ export function MediaCard({
       ) : null}
     </Link>
   );
+}
+
+/** The visual inside a card frame: shipped real media when we have it, generated artwork otherwise. */
+export function MediaFrame({
+  seed,
+  alt,
+  theme,
+  media,
+  priority,
+  sizes,
+}: {
+  seed: string;
+  alt: string;
+  theme?: ArtTheme;
+  media?: ShowcaseMedia;
+  priority?: boolean;
+  sizes?: string;
+}) {
+  if (media?.kind === "image") {
+    return <Image src={media.src} alt={alt} fill priority={priority} sizes={sizes ?? "50vw"} className="object-cover" />;
+  }
+  if (media?.kind === "video") {
+    return (
+      <video src={media.src} poster={media.poster} muted loop autoPlay playsInline preload="metadata" aria-label={alt} className="absolute inset-0 h-full w-full object-cover" />
+    );
+  }
+  return <Artwork seed={seed} theme={theme} />;
 }

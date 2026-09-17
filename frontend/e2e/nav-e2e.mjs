@@ -1,11 +1,16 @@
 // Browser-level navigation / demo-path check for the product shell built in M6 against the
 // local stack with the backend in USE_FAKE_PROVIDERS mode: landing → Explore → catalog →
 // signup → generators → History → secondary routes, at desktop and phone widths.
-// Usage: node e2e/nav-e2e.mjs <screenshot-dir>
+// Usage: node e2e/nav-e2e.mjs <screenshot-dir> [reference.png]
 import { chromium } from "playwright";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 const base = "http://127.0.0.1:3000";
 const shots = process.argv[2];
+// A 64×64 lime PNG (valid, decodable) for the image-edit before/after check when no file is given.
+const pngPath = process.argv[3] ?? join(shots, "nav-ref.png");
+if (!process.argv[3]) writeFileSync(pngPath, Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAOklEQVR4nO3OMQEAAAgDoK1/aM3g4QcFqEtUqVQqlUqlUqlUKpVKpVKpVCqVSqVSqVQqlUqlUqlUKn0FDtPAAf5YbSMAAAAASUVORK5CYII=", "base64"));
 const email = `nav-${Date.now()}@example.com`;
 const results = [];
 const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} ${name}${extra ? " — " + extra : ""}`);
@@ -19,7 +24,7 @@ page.on("pageerror", (e) => consoleErrors.push(String(e)));
 
 const noOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 // Client components hydrate after `goto` resolves, so visibility checks wait briefly instead of sampling.
-const visible = (locator) => locator.first().waitFor({ state: "visible", timeout: 8000 }).then(() => true, () => false);
+const visible = (locator) => locator.first().waitFor({ state: "visible", timeout: 15000 }).then(() => true, () => false);
 const notFound = [];
 page.on("response", (r) => r.status() === 404 && notFound.push(r.url()));
 const h1 = () => page.locator("h1").first().innerText();
@@ -29,6 +34,10 @@ const landing = await page.goto(`${base}/`);
 check("landing renders for anonymous visitor", landing.status() === 200 && (await visible(page.getByRole("link", { name: "Sign up", exact: true }))));
 check("explore shows the signup card", await visible(page.getByRole("region", { name: "Sign up" })));
 check("explore has curated galleries", (await page.locator("section[aria-label]").count()) >= 5);
+check("explore shows the real FLUX output shipped with the app", (await page.locator('img[src*="flux-lime-jacket"]').count()) >= 1);
+check("explore plays the real LTX clip shipped with the app", (await page.locator('video[src*="/showcase/ltx-paper-boat"]').count()) >= 1);
+check("discovery artwork is rendered locally (no third-party photo hosts)", (await page.locator('img[src^="http"]').count()) === 0);
+await primaryNavLanguage(page);
 await page.screenshot({ path: `${shots}/60-explore.png` });
 
 await page.getByRole("link", { name: /Higgsfield Effects/ }).click();
@@ -46,6 +55,12 @@ await page.goto(`${base}/image`);
 check("/image catalog lists Available and Preview tools", (await page.getByText("Available now").count()) >= 2 && (await page.getByText("Preview", { exact: true }).count()) >= 5);
 check("real image model card links to the generator", (await page.locator('section[aria-label="Models"] a[href^="/generate/image?model="]').count()) >= 1);
 const primaryNav = page.getByRole("navigation", { name: "Primary" });
+async function primaryNavLanguage(p) {
+  await p.getByRole("button", { name: "Language" }).click();
+  const current = p.locator('[aria-current="true"]', { hasText: "English" });
+  check("language menu opens and marks English as the only available language", await visible(current));
+  await p.keyboard.press("Escape");
+}
 await primaryNav.getByRole("link", { name: "Video", exact: true }).hover();
 const menuLink = primaryNav.locator('a[href="/generate/video"]');
 await menuLink.first().waitFor({ state: "visible" });
@@ -61,6 +76,7 @@ check("preview tool page renders with a working fallback link", (await page.getB
 await page.goto(`${base}/models/seedance-2-5`);
 check("reference model page renders", (await h1()).length > 0);
 check("unknown tool slug is a real 404", (await page.goto(`${base}/tools/does-not-exist`)).status() === 404);
+check("404 keeps the product shell and offers a way back", (await page.locator('nav[aria-label="Primary"]').count()) === 1 && (await visible(page.getByRole("link", { name: /Back to Explore/ }))));
 
 // --- Secondary routes ------------------------------------------------------------------
 const secondary = ["/video", "/audio", "/cinema-studio", "/marketing-studio", "/canvas", "/community", "/genjutsu", "/supercomputer", "/3d-jutsu", "/academy", "/contests", "/integrations/mcp", "/integrations/chatgpt", "/pricing", "/enterprise"];
@@ -75,6 +91,7 @@ check("all secondary routes render with a heading and no overflow", broken.lengt
 await page.goto(`${base}/community`);
 const recreateHref = await page.getByRole("link", { name: /Recreate/ }).first().getAttribute("href");
 check("community posts carry a Recreate deep link", /\/generate\/(image|video)\?/.test(recreateHref ?? ""));
+check("community shows model metadata, not invented users or like counts", (await page.getByText(/FLUX\.1 Schnell|LTX Video/).count()) >= 2 && (await page.getByText(/\d,\d{3}/).count()) === 0);
 await page.goto(`${base}/cinema-studio`);
 const composed = await page.locator('a[href^="/generate/video?"]').first().getAttribute("href");
 check("cinema studio composes a prompt for the video generator", /prompt=/.test(composed ?? ""));
@@ -88,6 +105,7 @@ check("generators redirect anonymous users to login with next", true);
 await page.goto(`${base}/edit/image`);
 await page.waitForURL(/\/login\?next=%2Fedit%2Fimage/);
 check("/edit/image is auth-gated", true);
+await page.waitForLoadState("networkidle");
 await page.locator('main a[href^="/signup"], form a[href^="/signup"]').first().click();
 await page.waitForURL(/\/signup/);
 await page.getByRole("button", { name: /Continue with Email/ }).click();
@@ -103,13 +121,22 @@ check("signup returns to the requested edit page", true);
 check("image editor renders with generate disabled until an upload", await page.locator('form[aria-label="Image editor"] button[type="submit"]').isDisabled());
 await page.getByRole("button", { name: "Make it snow" }).click();
 check("quick-edit chip fills the instruction", (await page.inputValue("#edit-instruction")) === "Make it snow");
+await page.setInputFiles('input[aria-label="Upload reference image"]', pngPath);
+await page.waitForSelector('form[aria-label="Image editor"] img');
+await page.locator('form[aria-label="Image editor"] button[type="submit"]').click();
+const editRow = page.locator('article[aria-label^="Edit:"]').first();
+check("submitting an edit shows a before → after row immediately", await visible(editRow));
+check("the row shows the reference image as Before", await visible(editRow.locator('img[alt="Reference image"]')));
+await editRow.locator('img[alt^="Make it snow"]').waitFor({ state: "visible", timeout: 20000 });
+check("the edit completes into the After slot", true);
 await page.screenshot({ path: `${shots}/61-edit-image.png` });
 
 await page.goto(`${base}/`);
 check("explore switches to the welcome-back card when signed in", await visible(page.getByRole("region", { name: "Continue creating" })));
 await page.getByRole("link", { name: "Create an image" }).click();
 await page.waitForURL(/\/generate\/image$/);
-check("explore → image generator", await visible(page.getByText("Start creating with")));
+// The account already holds an edit, so the workspace shows results rather than the empty hero.
+check("explore → image generator", await visible(page.locator("#image-prompt")));
 
 await page.goto(`${base}${effectHref}`);
 await page.waitForSelector("#video-prompt");
@@ -120,6 +147,7 @@ check("video sidebar Edit Video tab opens the preview page", true);
 
 await page.goto(`${base}/generate/audio`);
 check("audio generator reachable", await visible(page.getByRole("form", { name: "Speech generator" })));
+check("audio Voice Change / Translate tabs open honest preview pages", (await page.locator('a[role="tab"][href="/tools/voice-change"]').count()) === 1 && (await page.locator('a[role="tab"][href="/tools/translate"]').count()) === 1);
 await page.getByRole("button", { name: "Account menu" }).click();
 await page.getByRole("menuitem", { name: "History" }).click();
 await page.waitForURL(/\/history$/);

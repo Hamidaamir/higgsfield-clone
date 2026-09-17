@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, File, UploadFile, status
 
 from app.api.deps import CurrentUser, DbSession, Runtime
@@ -19,3 +21,9 @@ async def upload_asset(
         raise ValidationError("Images must be 10 MB or smaller.")
     asset = await asset_service.upload_reference_image(db, runtime, user, data, file.content_type)
     return AssetResponse.model_validate(asset)
+
+
+@router.get("/{asset_id}", response_model=AssetResponse)
+async def get_asset(asset_id: uuid.UUID, user: CurrentUser, db: DbSession) -> AssetResponse:
+    """Metadata + URL for one of the caller's assets (used to show the reference beside an edit)."""
+    return AssetResponse.model_validate(await asset_service.get_owned_asset(db, user, asset_id))

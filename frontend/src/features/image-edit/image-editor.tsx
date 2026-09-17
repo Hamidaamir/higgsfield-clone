@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowRight, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, MoveRight, Sparkles, Wand2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ import {
   useModels,
   useRetryGeneration,
 } from "@/hooks/use-generations";
+import { useAsset } from "@/hooks/use-asset";
 import { useReferenceUpload } from "@/hooks/use-reference-upload";
 import { ApiError } from "@/lib/api/client";
 import type { ListGenerationsParams } from "@/lib/api/generations";
@@ -123,6 +125,8 @@ export function ImageEditor() {
           onSelect={reference.select}
           onClear={reference.clear}
           disabled={create.isPending}
+          purpose="Reference"
+          title="Upload the image to edit"
         />
 
         <div className="rounded-2xl border border-border bg-surface-elevated p-3">
@@ -222,17 +226,18 @@ export function ImageEditor() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 xl:grid-cols-2">
             {edits.map((generation) => (
-              <GenerationCards
-                key={generation.id}
-                generation={generation}
-                model={modelById(generation.model_id)}
-                onOpen={(g, asset) => setDetail({ generation: g, assetIndex: Math.max(0, g.assets.findIndex((a) => a.id === asset.id)) })}
-                onReusePrompt={reuse}
-                onRetry={regenerate}
-                retrying={retry.isPending}
-              />
+              <EditRow key={generation.id} generation={generation}>
+                <GenerationCards
+                  generation={generation}
+                  model={modelById(generation.model_id)}
+                  onOpen={(g, asset) => setDetail({ generation: g, assetIndex: Math.max(0, g.assets.findIndex((a) => a.id === asset.id)) })}
+                  onReusePrompt={reuse}
+                  onRetry={regenerate}
+                  retrying={retry.isPending}
+                />
+              </EditRow>
             ))}
           </div>
         )}
@@ -248,5 +253,33 @@ export function ImageEditor() {
         regenerating={retry.isPending}
       />
     </div>
+  );
+}
+
+/** Before → after: the reference the edit started from beside the result (or its processing/failed state). */
+function EditRow({ generation, children }: { generation: Generation; children: React.ReactNode }) {
+  const referenceId = generation.settings.reference_asset_id;
+  const reference = useAsset(referenceId);
+  return (
+    <article className="grid grid-cols-2 gap-3 rounded-2xl border border-border bg-surface-elevated p-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center" aria-label={`Edit: ${generation.prompt}`}>
+      <div className="relative overflow-hidden rounded-xl border border-border bg-surface" style={{ aspectRatio: "1 / 1" }}>
+        {reference.data ? (
+          <Image src={reference.data.url} alt="Reference image" fill unoptimized={!reference.data.url.includes("res.cloudinary.com")} sizes="(max-width: 640px) 100vw, 30vw" className="object-cover" />
+        ) : (
+          <div className="absolute inset-0 skeleton-shimmer" />
+        )}
+        <span className="absolute left-2 top-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold text-white">Before</span>
+      </div>
+      <div className="hidden flex-col items-center gap-1 px-1 text-text-secondary sm:flex">
+        <MoveRight className="size-5" aria-hidden />
+        <span className="max-w-28 truncate text-center text-[11px]" title={generation.prompt}>
+          {generation.prompt}
+        </span>
+      </div>
+      <div className="relative">
+        <span className="pointer-events-none absolute right-2 top-2 z-10 rounded-md bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold text-white">After</span>
+        {children}
+      </div>
+    </article>
   );
 }

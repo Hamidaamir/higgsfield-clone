@@ -2,7 +2,7 @@
 
 import { Cloud, Gift, Mail, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -38,17 +38,19 @@ interface AuthCardProps {
 }
 
 export function AuthCard({ mode, nextPath }: AuthCardProps) {
-  const router = useRouter();
   const [step, setStep] = useState<"methods" | "email">("methods");
   const text = copy[mode];
-  const next = safeNextPath(nextPath);
+  // The live URL wins: after a client-side navigation the server prop can lag behind the query string.
+  const params = useSearchParams();
+  const next = safeNextPath(params.get("next") ?? nextPath);
   // Keep the deep link when the visitor switches between login and signup.
-  const switchQuery = nextPath ? `?next=${encodeURIComponent(next)}` : "";
+  const switchQuery = params.get("next") || nextPath ? `?next=${encodeURIComponent(next)}` : "";
 
   const onSuccess = () => {
     toast.success(mode === "signup" ? "Account created. Welcome to Higgsfield!" : "Welcome back!");
-    router.replace(next);
-    router.refresh();
+    // A full navigation, not router.replace(): if the visitor reached us by clicking a gated page, the
+    // client router has cached that page as "redirect to login" and would replay it despite the new session.
+    window.location.assign(next);
   };
 
   return (

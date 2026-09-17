@@ -1,10 +1,12 @@
 """User uploads (reference images). Bytes go to object storage; Postgres keeps metadata only."""
 
 import logging
+import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import ServiceUnavailableError, ValidationError
+from app.core.errors import NotFoundError, ServiceUnavailableError, ValidationError
 from app.core.images import image_dimensions
 from app.models import Asset, AssetKind, MediaType, User
 from app.services.runtime import GenerationRuntime
@@ -58,4 +60,14 @@ async def upload_reference_image(
     db.add(asset)
     await db.commit()
     await db.refresh(asset)
+    return asset
+
+
+async def get_owned_asset(db: AsyncSession, user: User, asset_id: uuid.UUID) -> Asset:
+    """An asset the caller owns; anything else is a 404 so ids can't be probed."""
+    asset = (
+        await db.execute(select(Asset).where(Asset.id == asset_id, Asset.user_id == user.id))
+    ).scalar_one_or_none()
+    if asset is None:
+        raise NotFoundError("Asset not found.")
     return asset

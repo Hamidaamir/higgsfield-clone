@@ -6,7 +6,7 @@ import { ChipCloud, HeroPanel, QuickLinkTile, SectionHeader, ViewAllButton, Wide
 import { ExploreAccountCard } from "@/components/discovery/explore-account-card";
 import { Badge } from "@/components/ui/badge";
 import { featureCards, gallerySections, moreFeatures, projectCards, type GallerySection } from "@/lib/config/explore";
-import { artFor } from "@/lib/photos";
+import { Artwork } from "@/components/discovery/artwork";
 
 /** Public home: the Higgsfield-style Explore/discovery page (reference 211457 → 212104). */
 export default function ExplorePage() {
@@ -20,12 +20,14 @@ export default function ExplorePage() {
             key={card.seed}
             href={card.href}
             seed={card.seed}
+            theme={card.theme}
+            media={card.media}
             alt={card.title}
             overlay={card.overlay}
             overlayPosition={card.overlayPosition}
             title={card.title}
             subtitle={card.subtitle}
-            priority={i < 2}
+            priority={i < 2 || Boolean(card.media)}
           />
         ))}
       </section>
@@ -68,7 +70,7 @@ export default function ExplorePage() {
         <SectionHeader title="Explore the inside of every project" subtitle="See all prompts, assets, and how each project was created" />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {projectCards.map((project) => (
-            <MediaCard key={project.seed} href={project.href} seed={project.seed} alt={project.title}>
+            <MediaCard key={project.seed} href={project.href} seed={project.seed} theme={project.theme} alt={project.title}>
               <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/90 to-transparent px-3 pb-3 pt-8 text-xs text-white">
                 <span className="flex size-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">H</span>
                 <span className="min-w-0 flex-1 truncate">
@@ -143,14 +145,6 @@ export default function ExplorePage() {
 
       {/* 13. Chip cloud */}
       <ChipCloud title="Explore more AI features" items={moreFeatures} />
-
-      <p className="mt-2 text-center text-xs text-text-muted">
-        Discovery imagery is curated placeholder photography; your own generations live in{" "}
-        <Link href="/history" className="underline hover:text-text-secondary">
-          History
-        </Link>
-        .
-      </p>
     </div>
   );
 }
@@ -171,7 +165,13 @@ function Gallery({ section, mixed = false }: { section: GallerySection; mixed?: 
       />
       <div className={mixed ? "grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5" : "grid grid-cols-2 gap-4 xl:grid-cols-4"}>
         {section.items.map((item) => (
-          <MediaCard key={item.seed} href={item.href} seed={item.seed} alt={item.alt} ratio={mixed ? (item.portrait ? "3 / 4" : "4 / 5") : "16 / 10"} />
+          <MediaCard key={item.seed} href={item.href} seed={item.seed} theme={item.theme} media={item.media} alt={item.alt} ratio={mixed ? (item.portrait ? "3 / 4" : "4 / 5") : "16 / 10"}>
+            {item.chip ? (
+              <span className="absolute bottom-3 left-3 rounded-full border border-white/20 bg-black/70 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur">
+                {item.chip}
+              </span>
+            ) : null}
+          </MediaCard>
         ))}
       </div>
       <ViewAllButton href={section.viewAll.href}>{section.viewAll.label}</ViewAllButton>
@@ -186,7 +186,9 @@ function FloatingCard({ className, label, seed }: { className: string; label: st
         <Check className="size-3.5 text-accent" aria-hidden />
         {label}
       </p>
-      <div className="h-24 rounded-xl" style={{ backgroundImage: artFor(seed) }} />
+      <div className="relative h-24 overflow-hidden rounded-xl">
+        <Artwork seed={seed} theme={seed.includes("ugc") ? "character" : seed.includes("marketing") ? "advertising" : "cinematic"} />
+      </div>
     </div>
   );
 }

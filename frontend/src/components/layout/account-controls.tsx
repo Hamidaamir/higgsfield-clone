@@ -3,7 +3,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown, History, LogOut, Settings, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { useAuth, useLogout } from "@/hooks/use-auth";
@@ -13,13 +13,17 @@ import { cn } from "@/lib/utils";
 export function AccountControls() {
   const { user, isLoading } = useAuth();
   const pathname = usePathname();
+  const search = useSearchParams();
 
   if (isLoading) {
     return <span className="h-8 w-24 rounded-lg skeleton-shimmer" aria-hidden />;
   }
 
   if (!user) {
-    const next = pathname.startsWith("/login") || pathname.startsWith("/signup") ? "" : `?next=${encodeURIComponent(pathname)}`;
+    // On the auth pages, keep whatever deep link brought the visitor there instead of dropping it.
+    const onAuthPage = pathname.startsWith("/login") || pathname.startsWith("/signup");
+    const target = onAuthPage ? search.get("next") : pathname;
+    const next = target ? `?next=${encodeURIComponent(target)}` : "";
     return (
       <>
         <Button asChild variant="ghost" size="sm" className="text-accent hover:text-accent">

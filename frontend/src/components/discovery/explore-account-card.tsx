@@ -5,7 +5,9 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { artFor } from "@/lib/photos";
+import Image from "next/image";
+
+import { SHOWCASE } from "@/lib/config/explore";
 
 const perks = ["Real image, video and speech generation", "Free to sign up — no card, no credits to buy", "Everything you make is saved to History"];
 
@@ -16,9 +18,9 @@ export function ExploreAccountCard() {
     <section
       aria-label={user ? "Continue creating" : "Sign up"}
       className="relative overflow-hidden rounded-3xl border border-border bg-surface-elevated"
-      style={{ backgroundImage: artFor(user ? "explore-welcome" : "explore-discount") }}
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-transparent" aria-hidden />
+      <Image src={SHOWCASE.fluxLimeJacket.src} alt="" fill sizes="(max-width: 1024px) 100vw, 40vw" className="object-cover object-[78%_28%]" priority />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/80 to-black/45 lg:via-black/65 lg:to-black/10" aria-hidden />
       <div className="relative flex h-full flex-col justify-between gap-6 p-6 sm:p-8">
         <div>
           <h2 className="display-heading text-3xl sm:text-4xl">
