@@ -10,7 +10,13 @@ import { GenerationDetailDialog } from "@/components/generation/generation-detai
 import { GenerationCards } from "@/features/image-generation/generation-card";
 import { PromptDock } from "@/features/image-generation/prompt-dock";
 import { WorkspaceHero } from "@/features/image-generation/workspace-hero";
-import { useCreateImageGeneration, useGenerationList, useModels, useRetryGeneration } from "@/hooks/use-generations";
+import {
+  useActiveGenerationPolling,
+  useCreateImageGeneration,
+  useGenerationList,
+  useModels,
+  useRetryGeneration,
+} from "@/hooks/use-generations";
 import { ApiError } from "@/lib/api/client";
 import type { ListGenerationsParams } from "@/lib/api/generations";
 import { imagePromptSchema } from "@/lib/schemas/generation";
@@ -97,7 +103,8 @@ export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRat
     }
   };
 
-  const items = listQuery.data?.items ?? [];
+  const items = useMemo(() => listQuery.data?.items ?? [], [listQuery.data]);
+  useActiveGenerationPolling(items);
   const disabledReason = modelsQuery.isError ? "Models could not be loaded. Refresh to try again." : null;
 
   return (

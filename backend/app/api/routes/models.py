@@ -22,6 +22,8 @@ def _to_response(spec: ModelSpec) -> ModelResponse:
         badge=spec.badge,
         credit_cost=spec.credit_cost,
         tags=list(spec.tags),
+        durations_s=list(spec.durations_s),
+        default_duration_s=spec.default_duration_s,
     )
 
 

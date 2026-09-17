@@ -7,6 +7,7 @@ from typing import Any
 
 import cloudinary
 import cloudinary.uploader
+import httpx
 from cloudinary.utils import cloudinary_url
 
 from app.models import MediaType
@@ -17,6 +18,7 @@ log = logging.getLogger(__name__)
 # Cloudinary treats audio as the "video" resource type.
 _RESOURCE_TYPES = {MediaType.IMAGE: "image", MediaType.VIDEO: "video", MediaType.AUDIO: "video"}
 UPLOAD_TIMEOUT_S = 60
+FETCH_TIMEOUT_S = 30
 _FORMAT_MIME = {
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
@@ -62,7 +64,14 @@ class CloudinaryStorage:
             thumbnail_url, _ = cloudinary_url(
                 public_id, width=512, crop="limit", quality="auto", fetch_format="auto", secure=True
             )
+        elif media_type == MediaType.VIDEO:
+            # Cloudinary renders a poster frame on the fly when a video public id is requested as jpg.
+            thumbnail_url, _ = cloudinary_url(
+                public_id, resource_type="video", format="jpg", width=512, crop="limit", secure=True
+            )
         duration = result.get("duration")
+        stored_width = result.get("width")
+        stored_height = result.get("height")
         # Cloudinary may transcode on upload (e.g. PNG -> JPEG); trust the stored format.
         stored_format = str(result.get("format") or "").lower()
         if stored_format:
@@ -74,7 +83,16 @@ class CloudinaryStorage:
             thumbnail_url=thumbnail_url,
             mime_type=mime_type,
             size_bytes=int(result.get("bytes", len(data))),
-            width=result.get("width"),
-            height=result.get("height"),
+            width=int(stored_width) if stored_width else None,
+            height=int(stored_height) if stored_height else None,
             duration_ms=int(float(duration) * 1000) if duration else None,
         )
+
+    async def fetch(self, url: str) -> bytes:
+        try:
+            async with httpx.AsyncClient(timeout=FETCH_TIMEOUT_S, follow_redirects=True) as client:
+                response = await client.get(url)
+                response.raise_for_status()
+                return response.content
+        except httpx.HTTPError as exc:
+            raise StorageError(f"cloudinary fetch failed: {type(exc).__name__}") from exc

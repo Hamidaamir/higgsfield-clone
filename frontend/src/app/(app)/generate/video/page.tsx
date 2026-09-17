@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { VideoGenerator } from "@/features/video-generation/video-generator";
 
 export const metadata: Metadata = { title: "Create Video" };
 
-export default function GenerateVideoPage() {
+interface PageProps {
+  searchParams: Promise<{ model?: string; prompt?: string; aspect?: string; duration?: string }>;
+}
+
+/** `?model=&prompt=&aspect=&duration=` come from mega-menu links and History "Reuse prompt". */
+export default async function VideoGeneratePage({ searchParams }: PageProps) {
+  const { model, prompt, aspect, duration } = await searchParams;
+  const seconds = Number.parseInt(duration ?? "", 10);
   return (
-    <PagePlaceholder
-      eyebrow="Video"
-      title="Create Video"
-      description="Turn prompts and images into video. Wired to a real provider in milestone M4."
+    <VideoGenerator
+      initialModelId={model}
+      initialPrompt={prompt}
+      initialAspectRatio={aspect}
+      initialDuration={Number.isFinite(seconds) ? seconds : undefined}
     />
   );
 }

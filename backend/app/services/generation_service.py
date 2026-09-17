@@ -4,67 +4,144 @@ import base64
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.errors import NotFoundError, ValidationError
-from app.models import Generation, GenerationStatus, GenerationType, User
-from app.schemas.generation import ImageGenerationCreate
+from app.core.errors import ConflictError, NotFoundError, ValidationError
+from app.core.ratelimit import GLOBAL_KEY, video_global_limiter, video_user_limiter
+from app.models import ACTIVE_STATUSES, Asset, Generation, GenerationStatus, GenerationType, MediaType, User
+from app.schemas.generation import ImageGenerationCreate, VideoGenerationCreate
 from app.services import job_runner
-from app.services.model_registry import get_model
+from app.services.model_registry import ModelSpec, get_model
 from app.services.runtime import GenerationRuntime
 
 DEFAULT_PAGE_SIZE = 24
 MAX_PAGE_SIZE = 60
 
 
+def _field_error(message: str, field: str, detail: str) -> ValidationError:
+    return ValidationError(message, details={"fields": [{"field": field, "message": detail}]})
+
+
+def _require_model(model_id: str, model_type: GenerationType) -> ModelSpec:
+    spec = get_model(model_id, model_type)
+    if spec is None:
+        raise _field_error(f"Unknown {model_type.value} model.", "model_id", "Unsupported model.")
+    return spec
+
+
+def _check_aspect_ratio(spec: ModelSpec, aspect_ratio: str) -> None:
+    if aspect_ratio not in spec.aspect_ratios:
+        raise _field_error(
+            f"{spec.name} does not support the {aspect_ratio} aspect ratio.",
+            "aspect_ratio",
+            f"Supported: {', '.join(spec.aspect_ratios)}",
+        )
+
+
 async def create_image_generation(
     db: AsyncSession, runtime: GenerationRuntime, user: User, payload: ImageGenerationCreate
 ) -> Generation:
-    spec = get_model(payload.model_id, GenerationType.IMAGE)
-    if spec is None:
-        raise ValidationError(
-            "Unknown image model.",
-            details={"fields": [{"field": "model_id", "message": "Unsupported model."}]},
-        )
-    if payload.aspect_ratio not in spec.aspect_ratios:
-        raise ValidationError(
-            f"{spec.name} does not support the {payload.aspect_ratio} aspect ratio.",
-            details={
-                "fields": [
-                    {"field": "aspect_ratio", "message": f"Supported: {', '.join(spec.aspect_ratios)}"}
-                ]
-            },
-        )
+    spec = _require_model(payload.model_id, GenerationType.IMAGE)
+    _check_aspect_ratio(spec, payload.aspect_ratio)
     if payload.batch_size > spec.max_batch:
-        raise ValidationError(
+        raise _field_error(
             f"{spec.name} supports at most {spec.max_batch} images per generation.",
-            details={"fields": [{"field": "batch_size", "message": f"Maximum {spec.max_batch}"}]},
+            "batch_size",
+            f"Maximum {spec.max_batch}",
         )
-    if payload.negative_prompt and not spec.supports_negative_prompt:
-        payload.negative_prompt = None
-
     settings: dict[str, object] = {"aspect_ratio": payload.aspect_ratio, "batch_size": payload.batch_size}
-    if payload.negative_prompt:
+    if payload.negative_prompt and spec.supports_negative_prompt:
         settings["negative_prompt"] = payload.negative_prompt
     if payload.seed is not None:
         settings["seed"] = payload.seed
+    return await _enqueue(
+        db, runtime, user, spec, payload.prompt, settings, credit_cost=spec.credit_cost * payload.batch_size
+    )
 
+
+async def create_video_generation(
+    db: AsyncSession, runtime: GenerationRuntime, user: User, payload: VideoGenerationCreate
+) -> Generation:
+    spec = _require_model(payload.model_id, GenerationType.VIDEO)
+    _check_aspect_ratio(spec, payload.aspect_ratio)
+    if payload.duration_s not in spec.durations_s:
+        raise _field_error(
+            f"{spec.name} supports clip lengths of {', '.join(f'{d}s' for d in spec.durations_s)}.",
+            "duration_s",
+            f"Supported: {', '.join(str(d) for d in spec.durations_s)}",
+        )
+    settings: dict[str, object] = {"aspect_ratio": payload.aspect_ratio, "duration_s": payload.duration_s}
+    if payload.negative_prompt and spec.supports_negative_prompt:
+        settings["negative_prompt"] = payload.negative_prompt
+    if payload.seed is not None:
+        settings["seed"] = payload.seed
+    if payload.reference_asset_id is not None:
+        if not spec.supports_reference_image:
+            raise _field_error(
+                f"{spec.name} does not support reference images.", "reference_asset_id", "Unsupported."
+            )
+        await _require_owned_image_asset(db, user, payload.reference_asset_id)
+        settings["reference_asset_id"] = str(payload.reference_asset_id)
+
+    # The video provider's daily GPU quota is shared by everyone on this deployment:
+    # one in-flight clip per user, plus per-user and process-wide submission caps.
+    await _reject_if_video_in_flight(db, user)
+    video_user_limiter.check(str(user.id), what="video generations")
+    video_global_limiter.check(GLOBAL_KEY, what="video generations across the app")
+    return await _enqueue(db, runtime, user, spec, payload.prompt, settings, credit_cost=spec.credit_cost)
+
+
+async def _require_owned_image_asset(db: AsyncSession, user: User, asset_id: uuid.UUID) -> Asset:
+    asset = (
+        await db.execute(select(Asset).where(Asset.id == asset_id, Asset.user_id == user.id))
+    ).scalar_one_or_none()
+    if asset is None or asset.media_type != MediaType.IMAGE:
+        raise _field_error("Reference image not found.", "reference_asset_id", "Choose one of your images.")
+    return asset
+
+
+async def _reject_if_video_in_flight(db: AsyncSession, user: User) -> None:
+    active = await db.scalar(
+        select(func.count())
+        .select_from(Generation)
+        .where(
+            Generation.user_id == user.id,
+            Generation.type == GenerationType.VIDEO,
+            Generation.status.in_(ACTIVE_STATUSES),
+        )
+    )
+    if active:
+        raise ConflictError("A video is already generating. Wait for it to finish before starting another.")
+
+
+async def _enqueue(
+    db: AsyncSession,
+    runtime: GenerationRuntime,
+    user: User,
+    spec: ModelSpec,
+    prompt: str,
+    settings: dict[str, object],
+    *,
+    credit_cost: int,
+    parent_id: uuid.UUID | None = None,
+) -> Generation:
     generation = Generation(
         user_id=user.id,
-        type=GenerationType.IMAGE,
+        type=spec.type,
         status=GenerationStatus.QUEUED,
         provider=spec.provider,
         model_id=spec.id,
-        prompt=payload.prompt,
+        prompt=prompt,
         settings=settings,
-        credit_cost=spec.credit_cost * payload.batch_size,
+        credit_cost=credit_cost,
+        parent_generation_id=parent_id,
     )
     db.add(generation)
     await db.commit()
     await db.refresh(generation, attribute_names=["assets"])
-    runtime.spawn(job_runner.run_image_generation(runtime, generation.id))
+    runtime.spawn(job_runner.run_generation(runtime, generation.id))
     return generation
 
 
@@ -73,16 +150,31 @@ async def retry_generation(
 ) -> Generation:
     """Re-run a finished generation with the same prompt and settings, linked to its parent."""
     parent = await get_generation(db, user, generation_id)
-    if parent.type != GenerationType.IMAGE:
-        raise ValidationError("Only image generations can be retried right now.")
-    payload = ImageGenerationCreate(
-        prompt=parent.prompt,
-        model_id=parent.model_id,
-        aspect_ratio=str(parent.settings.get("aspect_ratio", "1:1")),
-        batch_size=int(parent.settings.get("batch_size", 1)),
-        negative_prompt=parent.settings.get("negative_prompt"),
-    )
-    child = await create_image_generation(db, runtime, user, payload)
+    if parent.status in ACTIVE_STATUSES:
+        raise ConflictError("This generation is still running.")
+    settings = parent.settings
+    if parent.type == GenerationType.IMAGE:
+        payload = ImageGenerationCreate(
+            prompt=parent.prompt,
+            model_id=parent.model_id,
+            aspect_ratio=str(settings.get("aspect_ratio", "1:1")),
+            batch_size=int(settings.get("batch_size", 1)),
+            negative_prompt=settings.get("negative_prompt"),
+        )
+        child = await create_image_generation(db, runtime, user, payload)
+    elif parent.type == GenerationType.VIDEO:
+        reference = settings.get("reference_asset_id")
+        video_payload = VideoGenerationCreate(
+            prompt=parent.prompt,
+            model_id=parent.model_id,
+            aspect_ratio=str(settings.get("aspect_ratio", "16:9")),
+            duration_s=int(settings.get("duration_s", 3)),
+            negative_prompt=settings.get("negative_prompt"),
+            reference_asset_id=uuid.UUID(str(reference)) if reference else None,
+        )
+        child = await create_video_generation(db, runtime, user, video_payload)
+    else:
+        raise ValidationError("This generation type cannot be retried yet.")
     child.parent_generation_id = parent.id
     await db.commit()
     return child

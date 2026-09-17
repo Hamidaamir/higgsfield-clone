@@ -29,3 +29,7 @@ class MediaStorage(Protocol):
     async def upload(self, data: bytes, *, media_type: MediaType, folder: str, mime_type: str) -> StoredMedia:
         """Store bytes and return a durable public reference."""
         ...
+
+    async def fetch(self, url: str) -> bytes:
+        """Read back a previously stored object (e.g. a reference image) by its delivery URL."""
+        ...

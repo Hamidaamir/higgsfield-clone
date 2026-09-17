@@ -54,14 +54,14 @@ check("processing cards appear immediately (batch of 2)", statusCount === 2, `co
 await page.screenshot({ path: `${shots}/12-image-processing.png` });
 
 // Completion via polling
-await page.waitForSelector('figure img[src^="data:image/png"]', { timeout: 30000 });
-const imgs = await page.locator('figure img[src^="data:image/png"]').count();
+await page.waitForSelector('figure img[src*="dev-assets"]', { timeout: 30000 });
+const imgs = await page.locator('figure img[src*="dev-assets"]').count();
 check("completed images rendered", imgs === 2, `count=${imgs}`);
 await page.screenshot({ path: `${shots}/13-image-completed.png` });
 
 // Persistence across refresh
 await page.reload();
-await page.waitForSelector('figure img[src^="data:image/png"]', { timeout: 30000 });
+await page.waitForSelector('figure img[src*="dev-assets"]', { timeout: 30000 });
 check("results survive refresh", (await page.locator("figure").count()) === 2);
 
 // Lightbox

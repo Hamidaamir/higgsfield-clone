@@ -10,9 +10,11 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.config import Settings
-from app.providers.base import ImageGenerationProvider
+from app.providers.base import ImageGenerationProvider, VideoGenerationProvider
 from app.providers.cloudflare_image import CloudflareImageProvider
 from app.providers.fake_image import FakeImageProvider
+from app.providers.fake_video import FakeVideoProvider
+from app.providers.hf_space_video import HFSpaceVideoProvider
 from app.storage.base import MediaStorage
 from app.storage.cloudinary_storage import CloudinaryStorage
 from app.storage.fake_storage import FakeStorage
@@ -24,6 +26,7 @@ log = logging.getLogger(__name__)
 class GenerationRuntime:
     image_provider: ImageGenerationProvider | None
     storage: MediaStorage | None
+    video_provider: VideoGenerationProvider | None = None
     _tasks: set[asyncio.Task[None]] = field(default_factory=set)
 
     def spawn(self, coro: Coroutine[Any, Any, None]) -> asyncio.Task[None]:
@@ -45,6 +48,7 @@ def build_runtime(settings: Settings) -> GenerationRuntime:
         return GenerationRuntime(
             image_provider=FakeImageProvider(latency_s=settings.fake_provider_latency_s),
             storage=FakeStorage(),
+            video_provider=FakeVideoProvider(latency_s=settings.fake_provider_latency_s),
         )
 
     image_provider: ImageGenerationProvider | None = None
@@ -66,4 +70,10 @@ def build_runtime(settings: Settings) -> GenerationRuntime:
     else:
         log.warning("Cloudinary credentials missing: media storage disabled")
 
-    return GenerationRuntime(image_provider=image_provider, storage=storage)
+    video_provider: VideoGenerationProvider | None = None
+    if settings.hf_token:
+        video_provider = HFSpaceVideoProvider(settings.hf_token.get_secret_value())
+    else:
+        log.warning("HF_TOKEN missing: video generation disabled")
+
+    return GenerationRuntime(image_provider=image_provider, storage=storage, video_provider=video_provider)

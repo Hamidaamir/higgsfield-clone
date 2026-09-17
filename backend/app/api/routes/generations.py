@@ -5,7 +5,12 @@ from fastapi import APIRouter, Query, status
 from app.api.deps import CurrentUser, DbSession, Runtime
 from app.core.ratelimit import generation_limiter
 from app.models import GenerationStatus, GenerationType
-from app.schemas.generation import GenerationListResponse, GenerationResponse, ImageGenerationCreate
+from app.schemas.generation import (
+    GenerationListResponse,
+    GenerationResponse,
+    ImageGenerationCreate,
+    VideoGenerationCreate,
+)
 from app.services import generation_service
 from app.services.generation_service import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 
@@ -18,6 +23,15 @@ async def create_image(
 ) -> GenerationResponse:
     generation_limiter.check(str(user.id))
     generation = await generation_service.create_image_generation(db, runtime, user, payload)
+    return GenerationResponse.model_validate(generation)
+
+
+@router.post("/video", response_model=GenerationResponse, status_code=status.HTTP_202_ACCEPTED)
+async def create_video(
+    payload: VideoGenerationCreate, user: CurrentUser, db: DbSession, runtime: Runtime
+) -> GenerationResponse:
+    generation_limiter.check(str(user.id))
+    generation = await generation_service.create_video_generation(db, runtime, user, payload)
     return GenerationResponse.model_validate(generation)
 
 

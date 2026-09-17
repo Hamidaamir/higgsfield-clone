@@ -61,7 +61,7 @@ await page.getByRole("button", { name: "Load more" }).click();
 await page.waitForFunction(() => document.querySelectorAll("article").length === 27);
 tiles = await page.locator("article").count();
 check("load more appends remaining 3", tiles === 27 && (await page.getByRole("button", { name: "Load more" }).count()) === 0);
-check("completed tiles render media", (await page.locator('article img[src^="data:image/png"]').count()) === 26);
+check("completed tiles render media", (await page.locator('article img[src*="dev-assets"]').count()) === 26);
 await page.screenshot({ path: `${shots}/21-history-grid.png` });
 
 // 4. failed tile
@@ -109,7 +109,7 @@ await page.waitForURL(/\/generate\/image/);
 await page.waitForSelector('[role="status"]', { timeout: 10000 });
 check("retry from history starts a new generation and opens the generator", true);
 await page.goto(`${base}/history`);
-await page.waitForSelector('article:has-text("patient") img[src^="data:image/png"]', { timeout: 20000 });
+await page.waitForSelector('article:has-text("patient") img[src*="dev-assets"]', { timeout: 20000 });
 check("processing tile updates to completed via polling", true);
 
 // 8. refresh persistence

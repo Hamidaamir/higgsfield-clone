@@ -19,6 +19,8 @@ export function reuseHref(generation: Generation, models: ModelSpec[] | undefine
     if (aspect && model.aspect_ratios.includes(aspect)) params.set("aspect", aspect);
     const batch = generation.settings.batch_size;
     if (batch && batch <= model.max_batch) params.set("batch", String(batch));
+    const duration = generation.settings.duration_s;
+    if (duration && model.durations_s.includes(duration)) params.set("duration", String(duration));
   }
   return `${GENERATOR_ROUTES[generation.type]}?${params}`;
 }

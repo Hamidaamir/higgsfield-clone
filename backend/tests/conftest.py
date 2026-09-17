@@ -29,6 +29,7 @@ from app.db.base import Base  # noqa: E402
 from app.db.session import dispose_engine  # noqa: E402
 from app.main import create_app  # noqa: E402
 from app.providers.fake_image import FakeImageProvider  # noqa: E402
+from app.providers.fake_video import FakeVideoProvider  # noqa: E402
 from app.services.runtime import GenerationRuntime  # noqa: E402
 from app.storage.fake_storage import FakeStorage  # noqa: E402
 
@@ -66,7 +67,11 @@ async def clean_tables() -> AsyncIterator[None]:
 @pytest.fixture
 def runtime() -> GenerationRuntime:
     """Fake provider + storage; tests tweak `runtime.image_provider` / `runtime.storage` as needed."""
-    return GenerationRuntime(image_provider=FakeImageProvider(), storage=FakeStorage(data_urls=False))
+    return GenerationRuntime(
+        image_provider=FakeImageProvider(),
+        storage=FakeStorage(serve_locally=False),
+        video_provider=FakeVideoProvider(),
+    )
 
 
 @pytest.fixture

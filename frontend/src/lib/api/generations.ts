@@ -9,6 +9,15 @@ export interface ImageGenerationInput {
   negative_prompt?: string;
 }
 
+export interface VideoGenerationInput {
+  prompt: string;
+  model_id: string;
+  aspect_ratio: string;
+  duration_s: number;
+  negative_prompt?: string;
+  reference_asset_id?: string;
+}
+
 export interface ListGenerationsParams {
   type?: GenerationType;
   status?: GenerationStatus;
@@ -19,6 +28,9 @@ export interface ListGenerationsParams {
 
 export const createImageGeneration = (input: ImageGenerationInput) =>
   api.post<Generation>("/api/generations/image", input, { retries: 0 });
+
+export const createVideoGeneration = (input: VideoGenerationInput) =>
+  api.post<Generation>("/api/generations/video", input, { retries: 0 });
 
 export const fetchGeneration = (id: string) => api.get<Generation>(`/api/generations/${id}`);
 

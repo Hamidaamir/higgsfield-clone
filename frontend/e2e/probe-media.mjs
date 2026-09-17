@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 const files = process.argv.slice(2);
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined });
 const page = await browser.newPage();
 await page.goto("about:blank");
 for (const f of files) {

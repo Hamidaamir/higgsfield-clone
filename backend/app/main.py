@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.api.routes import dev_assets
 from app.config import APP_VERSION, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
@@ -55,6 +56,8 @@ def create_app() -> FastAPI:
     )
     register_error_handlers(app)
     app.include_router(api_router)
+    if settings.use_fake_providers:
+        app.include_router(dev_assets.router, prefix="/api")
     return app
 
 

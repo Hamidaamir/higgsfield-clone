@@ -15,6 +15,9 @@ export interface ModelSpec {
   badge: string | null;
   credit_cost: number;
   tags: string[];
+  /** Video models only: selectable clip lengths in seconds. */
+  durations_s: number[];
+  default_duration_s: number | null;
 }
 
 export interface Asset {
@@ -37,6 +40,14 @@ export interface ImageGenerationSettings {
   seed?: number;
 }
 
+export interface VideoGenerationSettings {
+  aspect_ratio?: string;
+  duration_s?: number;
+  negative_prompt?: string;
+  seed?: number;
+  reference_asset_id?: string;
+}
+
 export interface Generation {
   id: string;
   type: GenerationType;
@@ -44,7 +55,7 @@ export interface Generation {
   provider: string;
   model_id: string;
   prompt: string;
-  settings: ImageGenerationSettings & Record<string, unknown>;
+  settings: ImageGenerationSettings & VideoGenerationSettings & Record<string, unknown>;
   error_code: string | null;
   error_message: string | null;
   credit_cost: number;

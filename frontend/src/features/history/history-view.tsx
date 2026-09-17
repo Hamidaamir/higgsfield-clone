@@ -77,7 +77,7 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
     [filter, debounced],
   );
   const feed = useInfiniteGenerations(params);
-  const modelsQuery = useModels("image");
+  const modelsQuery = useModels();
   const regenerate = useRegenerate();
 
   const items = useMemo(() => feed.data?.pages.flatMap((page) => page.items) ?? [], [feed.data]);
@@ -111,7 +111,7 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
       const child = await regenerate.mutateAsync(generation.id);
       setDetail(null);
       toast.success(generation.status === "failed" ? "Retrying generation…" : "Generating again…");
-      if (child.type === "image") router.push(generatorHref("image"));
+      router.push(generatorHref(child.type));
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not start the generation.");
     }

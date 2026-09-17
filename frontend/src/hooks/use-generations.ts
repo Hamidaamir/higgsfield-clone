@@ -5,11 +5,13 @@ import { useEffect } from "react";
 
 import {
   createImageGeneration,
+  createVideoGeneration,
   fetchGeneration,
   fetchGenerations,
   retryGeneration,
   type ImageGenerationInput,
   type ListGenerationsParams,
+  type VideoGenerationInput,
 } from "@/lib/api/generations";
 import { fetchModels } from "@/lib/api/models";
 import { queryKeys } from "@/lib/query-keys";
@@ -17,21 +19,13 @@ import { isActive, type Generation, type GenerationList, type GenerationType } f
 
 const POLL_INTERVAL_MS = 2000;
 
-export function useModels(type: GenerationType) {
+export function useModels(type?: GenerationType) {
   return useQuery({ queryKey: queryKeys.models(type), queryFn: () => fetchModels(type), staleTime: Infinity });
 }
 
-/**
- * Newest-first list that polls every 2s while any item is still queued/processing.
- * One query drives both the workspace grid and progress state, so there is a single poll.
- */
+/** Newest-first first page for a generator workspace. Pair with `useActiveGenerationPolling`. */
 export function useGenerationList(params: ListGenerationsParams) {
-  return useQuery({
-    queryKey: queryKeys.generations.list(params),
-    queryFn: () => fetchGenerations(params),
-    refetchInterval: (query) => (query.state.data?.items.some(isActive) ? POLL_INTERVAL_MS : false),
-    refetchIntervalInBackground: true,
-  });
+  return useQuery({ queryKey: queryKeys.generations.list(params), queryFn: () => fetchGenerations(params) });
 }
 
 function usePrependGeneration(params: ListGenerationsParams) {
@@ -50,6 +44,14 @@ export function useCreateImageGeneration(listParams: ListGenerationsParams) {
   const prepend = usePrependGeneration(listParams);
   return useMutation({
     mutationFn: (input: ImageGenerationInput) => createImageGeneration(input),
+    onSuccess: prepend,
+  });
+}
+
+export function useCreateVideoGeneration(listParams: ListGenerationsParams) {
+  const prepend = usePrependGeneration(listParams);
+  return useMutation({
+    mutationFn: (input: VideoGenerationInput) => createVideoGeneration(input),
     onSuccess: prepend,
   });
 }

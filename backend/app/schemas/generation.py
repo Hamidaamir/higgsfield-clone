@@ -33,6 +33,31 @@ class ImageGenerationCreate(BaseModel):
         return value or None
 
 
+class VideoGenerationCreate(BaseModel):
+    prompt: str = Field(min_length=1, max_length=PROMPT_MAX_LENGTH)
+    model_id: str = Field(min_length=1, max_length=80)
+    aspect_ratio: str = Field(default="16:9", pattern=r"^\d{1,2}:\d{1,2}$")
+    duration_s: int = Field(default=3, ge=1, le=10)
+    negative_prompt: str | None = Field(default=None, max_length=NEGATIVE_PROMPT_MAX_LENGTH)
+    seed: int | None = Field(default=None, ge=0, le=2**31 - 1)
+    # Optional image-to-video source; must be an image asset owned by the caller.
+    reference_asset_id: uuid.UUID | None = None
+
+    @field_validator("prompt")
+    @classmethod
+    def _prompt(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Prompt is required.")
+        return value
+
+    @field_validator("negative_prompt")
+    @classmethod
+    def _negative(cls, value: str | None) -> str | None:
+        value = (value or "").strip()
+        return value or None
+
+
 class AssetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -86,3 +111,5 @@ class ModelResponse(BaseModel):
     badge: str | None
     credit_cost: int
     tags: list[str]
+    durations_s: list[int]
+    default_duration_s: int | None

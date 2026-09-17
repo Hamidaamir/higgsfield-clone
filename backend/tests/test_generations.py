@@ -141,7 +141,7 @@ async def test_provider_failure_marks_failed(
 
 
 async def test_storage_failure_is_a_real_failure(client: AsyncClient, runtime: GenerationRuntime) -> None:
-    runtime.storage = FakeStorage(fail=True, data_urls=False)
+    runtime.storage = FakeStorage(fail=True, serve_locally=False)
     await signup(client, USER_A)
     result = await create_and_wait(client, runtime, PAYLOAD)
     assert result["status"] == "failed"

@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     fake_provider_latency_s: float = 2.0
     # Per-user cap on generation requests; protects the free provider quotas from bursts.
     generation_rate_limit_per_minute: int = Field(default=12, ge=1, le=1000)
+    # Video is backed by a tiny daily GPU quota shared by every user of this deployment,
+    # so submissions are additionally capped per user (per 10 min) and process-wide (per hour).
+    video_rate_limit_per_user_10min: int = Field(default=3, ge=1, le=100)
+    video_rate_limit_global_per_hour: int = Field(default=6, ge=1, le=1000)
 
     cloudinary_cloud_name: str | None = None
     cloudinary_api_key: str | None = None
