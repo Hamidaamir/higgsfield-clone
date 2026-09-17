@@ -4,6 +4,7 @@ from app.models.asset import Asset, AssetKind, MediaType
 from app.models.generation import ACTIVE_STATUSES, Generation, GenerationStatus, GenerationType
 from app.models.session import Session
 from app.models.user import User
+from app.models.user_identity import UserIdentity
 
 __all__ = [
     "ACTIVE_STATUSES",
@@ -15,4 +16,5 @@ __all__ = [
     "MediaType",
     "Session",
     "User",
+    "UserIdentity",
 ]

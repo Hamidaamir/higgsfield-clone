@@ -3,12 +3,15 @@
 import { Cloud, Gift, Mail, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AuthForm, type AuthMode } from "@/components/auth/auth-form";
 import { AuthPromoPane } from "@/components/auth/auth-promo-pane";
 import { SocialButton } from "@/components/auth/social-button";
+import { fetchAuthProviders } from "@/lib/api/auth";
+import { queryKeys } from "@/lib/query-keys";
 import { LogoMark } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { safeNextPath } from "@/hooks/use-auth";
@@ -37,6 +40,12 @@ interface AuthCardProps {
   nextPath?: string;
 }
 
+/** Short codes the Google callback redirects back with; anything else is ignored. */
+const OAUTH_ERRORS: Record<string, string> = {
+  google: "Google sign-in didn't complete. Try again, or continue with email.",
+  google_unverified: "That Google account's email isn't verified, so it can't be used here. Continue with email instead.",
+};
+
 export function AuthCard({ mode, nextPath }: AuthCardProps) {
   const [step, setStep] = useState<"methods" | "email">("methods");
   const text = copy[mode];
@@ -45,6 +54,8 @@ export function AuthCard({ mode, nextPath }: AuthCardProps) {
   const next = safeNextPath(params.get("next") ?? nextPath);
   // Keep the deep link when the visitor switches between login and signup.
   const switchQuery = params.get("next") || nextPath ? `?next=${encodeURIComponent(next)}` : "";
+  const providers = useQuery({ queryKey: queryKeys.auth.providers, queryFn: fetchAuthProviders, staleTime: 5 * 60_000 });
+  const oauthError = OAUTH_ERRORS[params.get("error") ?? ""];
 
   const onSuccess = () => {
     toast.success(mode === "signup" ? "Account created. Welcome to Higgsfield!" : "Welcome back!");
@@ -82,7 +93,12 @@ export function AuthCard({ mode, nextPath }: AuthCardProps) {
                   <Gift className="size-4" aria-hidden />
                   {mode === "signup" ? "Sign in with business email & Get 50 credits" : "Log in with business email"}
                 </button>
-                <SocialButton provider="google" />
+                {oauthError ? (
+                  <p role="alert" className="rounded-xl border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">
+                    {oauthError}
+                  </p>
+                ) : null}
+                <SocialButton provider="google" next={next} available={providers.data?.google ?? true} />
                 <SocialButton provider="apple" />
                 <SocialButton provider="microsoft" />
                 <div className="flex items-center gap-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-text-muted">

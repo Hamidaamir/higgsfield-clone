@@ -9,6 +9,7 @@ from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
     from app.models.session import Session
+    from app.models.user_identity import UserIdentity
 
 
 class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -16,7 +17,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     # CITEXT makes the unique constraint case-insensitive at the database level.
     email: Mapped[str] = mapped_column(CITEXT(), unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # NULL for accounts created through Google sign-in; they cannot log in with a password.
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     name: Mapped[str] = mapped_column(String(80), nullable=False)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
@@ -24,3 +26,10 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     sessions: Mapped[list["Session"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    identities: Mapped[list["UserIdentity"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+    @property
+    def has_password(self) -> bool:
+        return self.password_hash is not None

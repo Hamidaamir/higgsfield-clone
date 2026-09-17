@@ -58,6 +58,15 @@ class UserResponse(BaseModel):
     name: str
     avatar_url: str | None
     created_at: datetime
+    # False for Google-only accounts, so the UI can explain how they sign in.
+    has_password: bool = True
+
+
+class AuthProvidersResponse(BaseModel):
+    """Which sign-in methods this deployment offers (Google needs credentials configured)."""
+
+    google: bool
+    fake_google: bool = False
 
 
 class AuthResponse(BaseModel):

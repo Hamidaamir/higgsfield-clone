@@ -1,8 +1,9 @@
 "use client";
 
-import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
+import { googleStartHref } from "@/lib/api/auth";
+import { cn } from "@/lib/utils";
 
 type Provider = "google" | "apple" | "microsoft";
 
@@ -12,19 +13,61 @@ const providerLabels: Record<Provider, string> = {
   microsoft: "Continue with Microsoft",
 };
 
-/** Visual-only social sign-in. OAuth is deliberately out of scope for this build. */
-export function SocialButton({ provider }: { provider: Provider }) {
+interface SocialButtonProps {
+  provider: Provider;
+  /** Same-origin path to return to after sign-in (validated again server-side). */
+  next?: string;
+  /** Google only: false while the deployment has no OAuth client configured. */
+  available?: boolean;
+}
+
+/**
+ * Google is a real OpenID Connect sign-in: a plain link into the FastAPI flow, which comes back
+ * with the normal session cookie. Apple and Microsoft are not built; they read as such.
+ */
+export function SocialButton({ provider, next, available = true }: SocialButtonProps) {
+  if (provider === "google") {
+    if (!available) {
+      return (
+        <Tooltip content="Google sign-in needs OAuth credentials on this deployment">
+          <span className="block">
+            <Button type="button" variant="outline" size="lg" className="w-full gap-2.5 bg-surface" disabled aria-disabled>
+              <ProviderIcon provider="google" />
+              {providerLabels.google}
+            </Button>
+          </span>
+        </Tooltip>
+      );
+    }
+    return (
+      <Button asChild variant="outline" size="lg" className="w-full gap-2.5 bg-surface">
+        {/* A real navigation (not a router push) so the cookie set by the callback applies cleanly. */}
+        <a href={googleStartHref(next)} rel="nofollow">
+          <ProviderIcon provider="google" />
+          {providerLabels.google}
+        </a>
+      </Button>
+    );
+  }
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="lg"
-      className="w-full gap-2.5 bg-surface"
-      onClick={() => toast.info("Social sign-in isn't available in this build. Continue with email instead.")}
-    >
-      <ProviderIcon provider={provider} />
-      {providerLabels[provider]}
-    </Button>
+    <Tooltip content={`${provider === "apple" ? "Apple" : "Microsoft"} sign-in isn't part of this build`}>
+      <span className="block">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className={cn("w-full gap-2.5 bg-surface", "text-text-secondary disabled:opacity-100")}
+          disabled
+          aria-disabled
+        >
+          <ProviderIcon provider={provider} />
+          {providerLabels[provider]}
+          <span className="ml-auto rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+            Not in this build
+          </span>
+        </Button>
+      </span>
+    </Tooltip>
   );
 }
 

@@ -29,6 +29,8 @@ export function SettingsView() {
               <dd className="font-medium">{user.name}</dd>
               <dt className="text-text-secondary">Email</dt>
               <dd className="font-medium">{user.email}</dd>
+              <dt className="text-text-secondary">Sign-in</dt>
+              <dd className="font-medium">{user.has_password ? "Email & password" : "Google account"}</dd>
               <dt className="text-text-secondary">Member since</dt>
               <dd className="font-medium">{formatDateTime(user.created_at)}</dd>
             </dl>

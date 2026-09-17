@@ -15,7 +15,9 @@ from app.core.security import (
     verify_password,
 )
 from app.db.base import utcnow
-from app.models import Session, User
+from app.models import Session, User, UserIdentity
+from app.services.google_oauth import PROVIDER as GOOGLE
+from app.services.google_oauth import GoogleIdentity, GoogleSignInError
 
 log = logging.getLogger(__name__)
 
@@ -43,12 +45,59 @@ async def signup(
 
 async def login(db: AsyncSession, *, email: str, password: str, user_agent: str | None) -> tuple[User, str]:
     user = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
-    valid = verify_password(password, user.password_hash if user else _DUMMY_HASH)
-    if user is None or not valid:
+    # Google-only accounts have no hash; they take the dummy path so timing stays uniform.
+    valid = verify_password(password, user.password_hash if user and user.password_hash else _DUMMY_HASH)
+    if user is None or user.password_hash is None or not valid:
         raise UnauthorizedError("Invalid email or password.")
     token = await _create_session(db, user, user_agent)
     await db.commit()
     log.info("user logged in id=%s", user.id)
+    return user, token
+
+
+async def login_with_google(
+    db: AsyncSession, identity: GoogleIdentity, *, user_agent: str | None
+) -> tuple[User, str]:
+    """Resolve a verified Google identity to a local user and open a normal session.
+
+    Order matters: an identity already bound by Google's `sub` wins outright; otherwise a
+    *verified* Google email may attach to an existing password account (no duplicate users);
+    otherwise a new password-less account is created. Unverified emails never link or create.
+    """
+    if not identity.email_verified:
+        raise GoogleSignInError("Your Google email address is not verified.")
+    bound = (
+        await db.execute(
+            select(UserIdentity).where(
+                UserIdentity.provider == GOOGLE, UserIdentity.provider_subject == identity.sub
+            )
+        )
+    ).scalar_one_or_none()
+    user: User | None
+    if bound is not None:
+        user = await db.get_one(User, bound.user_id)
+        created = False
+    else:
+        user = (await db.execute(select(User).where(User.email == identity.email))).scalar_one_or_none()
+        created = user is None
+        if user is None:
+            user = User(
+                email=identity.email,
+                password_hash=None,
+                name=(identity.name or identity.email.split("@")[0])[:80],
+                avatar_url=identity.picture[:500] if identity.picture else None,
+            )
+            db.add(user)
+            await db.flush()
+        db.add(
+            UserIdentity(
+                user_id=user.id, provider=GOOGLE, provider_subject=identity.sub, email=identity.email
+            )
+        )
+        await db.flush()
+    token = await _create_session(db, user, user_agent)
+    await db.commit()
+    log.info("google sign-in id=%s new_user=%s linked=%s", user.id, created, bound is None and not created)
     return user, token
 
 

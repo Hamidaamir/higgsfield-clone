@@ -10,6 +10,7 @@ from collections.abc import AsyncIterator
 
 import pytest
 from alembic.config import Config
+from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -77,7 +78,8 @@ def runtime() -> GenerationRuntime:
 
 
 @pytest.fixture
-async def client(runtime: GenerationRuntime) -> AsyncIterator[AsyncClient]:
+def app(runtime: GenerationRuntime) -> FastAPI:
+    """The application under test; tests may swap `app.state.google_oauth` etc. before requests."""
     get_settings.cache_clear()
     generation_limiter.reset()
     app = create_app()
@@ -88,6 +90,11 @@ async def client(runtime: GenerationRuntime) -> AsyncIterator[AsyncClient]:
         """Exercises the CurrentUser dependency without depending on a product endpoint."""
         return {"email": user.email}
 
+    return app
+
+
+@pytest.fixture
+async def client(app: FastAPI, runtime: GenerationRuntime) -> AsyncIterator[AsyncClient]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
     await runtime.wait_idle()

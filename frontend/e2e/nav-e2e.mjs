@@ -61,6 +61,7 @@ async function primaryNavLanguage(p) {
   check("language menu opens and marks English as the only available language", await visible(current));
   await p.keyboard.press("Escape");
 }
+await page.waitForLoadState("networkidle"); // hover needs the hydrated nav
 await primaryNav.getByRole("link", { name: "Video", exact: true }).hover();
 const menuLink = primaryNav.locator('a[href="/generate/video"]');
 await menuLink.first().waitFor({ state: "visible" });

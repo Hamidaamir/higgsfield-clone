@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     database_url: str | None = None
     session_secret: SecretStr = SecretStr("dev-only-secret-change-me")
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    # Browser-facing origin of the Next app. OAuth redirect URIs and post-login redirects are
+    # built from it, so it must be the address users actually load (Vercel URL in production).
+    public_app_url: str = "http://localhost:3000"
+
+    # Google sign-in (OIDC). Both unset → the button is shown as unavailable.
+    google_client_id: str | None = None
+    google_client_secret: SecretStr | None = None
     # Dev/test only: swap real providers for in-process fakes so UI work spends no quota.
     use_fake_providers: bool = False
     fake_provider_latency_s: float = 2.0
@@ -44,6 +51,10 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.app_env == "production"
 
+    @property
+    def google_oauth_configured(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret)
+
     @model_validator(mode="after")
     def _require_production_settings(self) -> "Settings":
         if not self.is_production:
@@ -53,6 +64,8 @@ class Settings(BaseSettings):
             missing.append("session_secret")
         if self.use_fake_providers:
             missing.append("use_fake_providers must be false")
+        if not self.public_app_url.startswith("https://"):
+            missing.append("public_app_url must be an https URL")
         if missing:
             raise ValueError(f"Missing required production settings: {', '.join(missing)}")
         return self

@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.router import api_router
 from app.api.routes import dev_assets
@@ -11,6 +12,7 @@ from app.config import APP_VERSION, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.db.session import dispose_engine, get_engine, get_session_factory
+from app.services.google_oauth import build_google_oauth
 from app.services.job_runner import reconcile_interrupted
 from app.services.runtime import GenerationRuntime, build_runtime
 
@@ -54,6 +56,18 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "DELETE", "PATCH"],
         allow_headers=["Content-Type", "Authorization"],
     )
+    # Signed, short-lived cookie holding only the OAuth transaction (state, nonce, next). The
+    # application session itself stays the opaque `hf_session` token stored in Postgres.
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.session_secret.get_secret_value(),
+        session_cookie="hf_oauth",
+        max_age=10 * 60,
+        same_site="lax",
+        https_only=settings.is_production,
+        path="/api/auth",
+    )
+    app.state.google_oauth = build_google_oauth(settings)
     register_error_handlers(app)
     app.include_router(api_router)
     if settings.use_fake_providers:
