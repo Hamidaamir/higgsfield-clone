@@ -9,6 +9,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AccountControls } from "@/components/layout/account-controls";
 import { Logo } from "@/components/layout/logo";
 import { MegaMenu } from "@/components/layout/mega-menu";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Badge, navBadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -117,6 +118,7 @@ export function TopNav() {
             <Sparkles className="size-3.5" aria-hidden />
             Enterprise
           </Link>
+          <ThemeToggle className="hidden md:inline-flex" />
           <LanguageMenu />
           <span className="mx-1 hidden h-5 w-px bg-border md:block" aria-hidden />
           {/* useSearchParams inside; the skeleton keeps the nav width stable while it resolves. */}
@@ -215,6 +217,10 @@ function MobileNav() {
                 </Link>
               </li>
             </ul>
+            <div className="mt-4 flex items-center justify-between border-t border-border-subtle px-3 pt-4">
+              <span className="text-[13px] font-medium text-foreground-muted">Theme</span>
+              <ThemeToggle />
+            </div>
           </nav>
         </Dialog.Content>
       </Dialog.Portal>

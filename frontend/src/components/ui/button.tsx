@@ -15,7 +15,9 @@ const variantClasses: Record<ButtonVariant, string> = {
   outline:
     "border border-border-strong bg-transparent text-text-primary hover:bg-surface-muted disabled:opacity-50",
   ghost: "bg-transparent text-text-secondary hover:text-text-primary hover:bg-surface-muted disabled:opacity-50",
-  white: "bg-white text-black hover:bg-neutral-200 disabled:opacity-50",
+  // "white" predates theming: it means "inverse of the canvas", not literally white.
+  white:
+    "bg-surface-inverse text-foreground-inverse hover:opacity-90 disabled:opacity-50",
   danger: "bg-danger/15 text-danger border border-danger/30 hover:bg-danger/25 disabled:opacity-50",
 };
 

@@ -6,9 +6,9 @@ export type BadgeVariant = "new" | "free" | "top" | "promo" | "neutral" | "accen
 
 const variantClasses: Record<BadgeVariant, string> = {
   new: "bg-accent text-accent-foreground",
-  free: "bg-[#2f4a1a] text-accent",
-  top: "bg-promo text-white",
-  promo: "bg-promo text-white",
+  free: "bg-accent-subtle text-accent-text",
+  top: "bg-accent text-accent-foreground",
+  promo: "bg-accent text-accent-foreground",
   neutral: "bg-surface-muted text-text-secondary",
   accent: "bg-accent-muted text-accent",
 };

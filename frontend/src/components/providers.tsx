@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
+import { ThemeProvider, useTheme } from "@/components/theme/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -18,18 +19,28 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>{children}</TooltipProvider>
-      <Toaster
-        theme="dark"
-        position="top-right"
-        offset={72}
-        toastOptions={{
-          classNames: {
-            toast: "!bg-surface-elevated !border-border !text-text-primary",
-            description: "!text-text-secondary",
-          },
-        }}
-      />
+      <ThemeProvider>
+        <TooltipProvider>{children}</TooltipProvider>
+        <ThemedToaster />
+      </ThemeProvider>
     </QueryClientProvider>
+  );
+}
+
+/** Sonner needs the resolved theme explicitly; tokens handle the rest. */
+function ThemedToaster() {
+  const { resolved } = useTheme();
+  return (
+    <Toaster
+      theme={resolved}
+      position="top-right"
+      offset={72}
+      toastOptions={{
+        classNames: {
+          toast: "!bg-surface-raised !border-border-default !text-foreground",
+          description: "!text-foreground-muted",
+        },
+      }}
+    />
   );
 }
