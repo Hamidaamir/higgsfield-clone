@@ -89,11 +89,23 @@ check("no horizontal overflow on mobile", !overflow);
 const gBase = "http://localhost:3000";
 const g = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
 const providers = await (await g.request.get(`${gBase}/api/auth/providers`)).json();
-check("providers endpoint offers Google (fake stand-in locally)", providers.google === true && providers.fake_google === true);
+check("providers endpoint offers Google sign-in", providers.google === true);
 await g.goto(`${gBase}/login?next=%2Fgenerate%2Fvideo`, { waitUntil: "networkidle" });
 const googleLink = g.getByRole("link", { name: "Continue with Google" });
 check("Google button starts the OAuth flow with next preserved", (await googleLink.getAttribute("href")) === "/api/auth/google/start?next=%2Fgenerate%2Fvideo");
 check("Apple and Microsoft are explicitly unavailable, not fake", (await g.getByRole("button", { name: /Continue with Apple/ }).isDisabled()) && (await g.getByRole("button", { name: /Continue with Microsoft/ }).isDisabled()));
+
+// The rest of this section drives the local stand-in consent page, which only exists when the
+// backend has no real Google credentials. With real ones configured, following the link would
+// leave the app for accounts.google.com, so the round trip is skipped instead.
+if (!providers.fake_google) {
+  check("Google round trip skipped (real OAuth credentials configured)", true, "run without GOOGLE_CLIENT_ID to exercise it");
+  const unexpectedEarly = consoleErrors.filter((e) => !e.includes("401"));
+  check("no unexpected console errors", unexpectedEarly.length === 0, unexpectedEarly.join(" | ").slice(0, 300));
+  console.log(results.join(String.fromCharCode(10)));
+  await browser.close();
+  process.exit(results.some((r) => r.startsWith("FAIL")) ? 1 : 0);
+}
 await googleLink.click();
 await g.waitForURL(/\/api\/auth\/google\/fake-consent\?/);
 check("start redirects to the consent step with a state parameter", /state=[A-Za-z0-9_-]{16,}/.test(g.url()));

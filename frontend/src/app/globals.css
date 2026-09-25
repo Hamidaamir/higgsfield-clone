@@ -1,79 +1,264 @@
 @import "tailwindcss";
 
 /*
- * Design tokens derived from the reference screenshots (reference/screenshots).
- * Near-black surfaces, lime accent, magenta promo badges, condensed uppercase display type.
- * Raw colors live here only; components consume the semantic tokens below.
+ * EDITORIAL STUDIO — design foundation (see docs/design/editorial-studio-{light,dark}.png).
+ *
+ * Three layers, in order:
+ *   1. RAW PALETTE   — literal values. Never referenced by components.
+ *   2. SEMANTIC TOKENS — what components actually consume; redefined per theme.
+ *   3. LEGACY ALIASES — the pre-redesign token names, now pointing at the semantic
+ *      layer so every existing component themes correctly before it is refactored.
+ *      Each redesign phase deletes alias usage from the components it touches.
+ *
+ * Light is the default; dark follows the system preference until the viewer chooses
+ * explicitly (see src/lib/theme.ts).
  */
+
+/* ---------------------------------------------------------------- 1. RAW PALETTE */
 :root {
-  --background: #0c0c0c;
-  --surface: #141414;
-  --surface-elevated: #1b1b1b;
-  --surface-muted: #232323;
-  --surface-hover: #2a2a2a;
-  --border: #262626;
-  --border-strong: #363636;
-  --text-primary: #f5f5f5;
-  --text-secondary: #9b9b9b;
-  --text-muted: #858585; /* ≥4.5:1 on every surface token */
-  --accent: #d6ff00;
-  --accent-hover: #e4ff4d;
-  --accent-muted: rgba(214, 255, 0, 0.14);
-  --accent-foreground: #0c0c0c;
-  --promo: #e0006c; /* hot pink that keeps white badge text at AA contrast */
-  --danger: #ff4d4f;
-  --success: #4ade80;
-  --warning: #f5b323;
-  --overlay: rgba(0, 0, 0, 0.72);
+  /* Warm paper scale */
+  --paper-50: #fdfbf7;
+  --paper-100: #f9f6f0;
+  --paper-200: #f3eee4;
+  --paper-300: #ebe4d6;
+  --paper-400: #ded5c3;
+  --paper-500: #c9bfa9;
+
+  /* Warm ink scale */
+  --ink-900: #17150f;
+  --ink-800: #1f1c16;
+  --ink-700: #2a251d;
+  --ink-600: #3a342a;
+  --ink-500: #5c554a;
+  --ink-400: #7d756a;
+  --ink-300: #a79e92;
+  --ink-200: #cdc5b9;
+  --ink-100: #f2ede4;
+
+  /* Orange-red brand accent */
+  --ember-700: #a03408;
+  --ember-600: #ce420f;
+  --ember-500: #e2551f;
+  --ember-400: #f0703f;
+  --ember-300: #f79b74;
+  --ember-100: rgba(206, 66, 15, 0.12);
+  --ember-100-dark: rgba(240, 112, 63, 0.16);
+
+  /* Status hues, warmed to sit beside the ember accent */
+  --status-success: #2f7d4f;
+  --status-success-dark: #5fc98a;
+  --status-warning: #9a6b08;
+  --status-warning-dark: #e0ad3c;
+  --status-danger: #b3261e;
+  --status-danger-dark: #f28b82;
+}
+
+/* ------------------------------------------------------------ 2. SEMANTIC TOKENS */
+/* Light — warm ivory paper, charcoal ink, thin warm rules. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --canvas: var(--paper-100);
+  --surface: var(--paper-50);
+  --surface-raised: #ffffff;
+  --surface-subtle: var(--paper-200);
+  --surface-hover: var(--paper-300);
+  --surface-inverse: var(--ink-900);
+
+  --foreground: var(--ink-900);
+  --foreground-muted: var(--ink-500);
+  --foreground-subtle: var(--ink-400);
+  --foreground-inverse: var(--paper-100);
+
+  --border-subtle: var(--paper-300);
+  --border-default: var(--paper-400);
+  --border-strong: var(--paper-500);
+
+  --accent: var(--ember-600);
+  --accent-hover: var(--ember-700);
+  --accent-foreground: #ffffff;
+  --accent-subtle: var(--ember-100);
+  /* Accent as *text* on canvas/surface; darker than the solid fill so it stays AA. */
+  --accent-text: var(--ember-700);
+
+  --success: var(--status-success);
+  --warning: var(--status-warning);
+  --danger: var(--status-danger);
+  --focus: var(--ember-600);
+
+  --overlay: rgba(23, 21, 15, 0.45);
+  --shadow-print: 0 1px 2px rgba(23, 21, 15, 0.06), 0 8px 24px rgba(23, 21, 15, 0.07);
+  --shadow-float: 0 12px 40px rgba(23, 21, 15, 0.14);
+  --grain-blend: multiply;
+  --grain-opacity: 0.05;
+}
+
+/* Dark — designed surfaces, not an inversion: warm near-black, off-white ink. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #0e0d0c;
+  --surface: #151311;
+  --surface-raised: #1d1a17;
+  --surface-subtle: #211d1a;
+  --surface-hover: #2a2521;
+  --surface-inverse: var(--paper-100);
+
+  --foreground: var(--ink-100);
+  --foreground-muted: var(--ink-300);
+  --foreground-subtle: #8f877c;
+  --foreground-inverse: var(--ink-900);
+
+  --border-subtle: #262220;
+  --border-default: #322c27;
+  --border-strong: #463e36;
+
+  --accent: var(--ember-600);
+  --accent-hover: var(--ember-500);
+  --accent-foreground: #ffffff;
+  --accent-subtle: var(--ember-100-dark);
+  /* On near-black, the solid fill is too dark to read as text: lighten it. */
+  --accent-text: var(--ember-400);
+
+  --success: var(--status-success-dark);
+  --warning: var(--status-warning-dark);
+  --danger: var(--status-danger-dark);
+  --focus: var(--ember-400);
+
+  --overlay: rgba(0, 0, 0, 0.7);
+  --shadow-print: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.65);
+  --grain-blend: overlay;
+  --grain-opacity: 0.1;
+}
+
+/* System preference applies only until the viewer picks a theme explicitly. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --canvas: #0e0d0c;
+    --surface: #151311;
+    --surface-raised: #1d1a17;
+    --surface-subtle: #211d1a;
+    --surface-hover: #2a2521;
+    --surface-inverse: var(--paper-100);
+
+    --foreground: var(--ink-100);
+    --foreground-muted: var(--ink-300);
+    --foreground-subtle: #8f877c;
+    --foreground-inverse: var(--ink-900);
+
+    --border-subtle: #262220;
+    --border-default: #322c27;
+    --border-strong: #463e36;
+
+    --accent-subtle: var(--ember-100-dark);
+    --accent-hover: var(--ember-500);
+    --accent-text: var(--ember-400);
+
+    --success: var(--status-success-dark);
+    --warning: var(--status-warning-dark);
+    --danger: var(--status-danger-dark);
+    --focus: var(--ember-400);
+
+    --overlay: rgba(0, 0, 0, 0.7);
+    --shadow-print: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.65);
+    --grain-blend: overlay;
+    --grain-opacity: 0.1;
+  }
+}
+
+/* ------------------------------------------------------------- 3. LEGACY ALIASES */
+/* Pre-redesign names kept alive so untouched components theme correctly. Phases R1–R10
+   migrate components onto the semantic names above; these disappear with the last one. */
+:root {
+  --background: var(--canvas);
+  --surface-elevated: var(--surface-raised);
+  --surface-muted: var(--surface-subtle);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--foreground-muted);
+  --text-muted: var(--foreground-subtle);
+  --border: var(--border-subtle);
+  --accent-muted: var(--accent-subtle);
+  /* The old lime/magenta pair is retired; promo now reads as a quiet accent tint. */
+  --promo: var(--accent);
 }
 
 @theme inline {
-  --color-background: var(--background);
+  /* Semantic (canonical) */
+  --color-canvas: var(--canvas);
   --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-subtle: var(--foreground-subtle);
+  --color-foreground-inverse: var(--foreground-inverse);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-text: var(--accent-text);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-focus: var(--focus);
+  --color-overlay: var(--overlay);
+
+  /* Legacy names (still referenced by not-yet-migrated components) */
+  --color-background: var(--background);
   --color-surface-elevated: var(--surface-elevated);
   --color-surface-muted: var(--surface-muted);
-  --color-surface-hover: var(--surface-hover);
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
+  --color-border: var(--border);
   --color-accent-muted: var(--accent-muted);
-  --color-accent-foreground: var(--accent-foreground);
   --color-promo: var(--promo);
-  --color-danger: var(--danger);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-overlay: var(--overlay);
 
+  /* Type: sans for every control, serif for editorial display. `--font-display`
+     still points at the pre-redesign face so untouched pages keep their typography
+     until their phase re-points them at the serif. */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, "Times New Roman", serif;
   --font-display: var(--font-archivo), var(--font-inter), ui-sans-serif, sans-serif;
 
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 22px;
+  /* Editorial components favour near-square corners. */
+  --radius-editorial: 2px;
+  --radius-frame: 4px;
 
-  --shadow-card: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-menu: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --shadow-accent: 0 0 0 1px rgba(214, 255, 0, 0.35), 0 8px 24px rgba(214, 255, 0, 0.18);
+  --shadow-card: var(--shadow-print);
+  --shadow-menu: var(--shadow-float);
+  --shadow-print: var(--shadow-print);
+  --shadow-float: var(--shadow-float);
+  /* Restrained: a hairline ring, not a neon glow. */
+  --shadow-accent: 0 0 0 1px var(--accent), 0 6px 16px rgba(206, 66, 15, 0.22);
 }
 
 @layer base {
   * {
-    border-color: var(--border);
+    border-color: var(--border-subtle);
   }
 
   html {
-    color-scheme: dark;
     scroll-behavior: smooth;
   }
 
   body {
-    background: var(--background);
-    color: var(--text-primary);
+    background: var(--canvas);
+    color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -85,7 +270,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--focus);
     outline-offset: 2px;
   }
 
@@ -98,14 +283,54 @@
   [aria-disabled="true"] {
     cursor: not-allowed;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
+/* Pre-redesign display face (uppercase condensed). Phases migrate off this. */
 @utility display-heading {
   font-family: var(--font-display);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   line-height: 0.95;
+}
+
+/* Editorial display: large serif headline, mixed case, tight but airy. */
+@utility editorial-display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+}
+
+/* The accented word inside an editorial headline (reference: "into *reality*."). */
+@utility editorial-emphasis {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--accent-text);
+}
+
+/* Small uppercase label used for section eyebrows and metadata rows. */
+@utility editorial-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--foreground-subtle);
 }
 
 @utility scrollbar-thin {
@@ -133,8 +358,8 @@
 @utility grain {
   background-image: url("/textures/grain.png");
   background-size: 96px 96px;
-  opacity: 0.11;
-  mix-blend-mode: overlay;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
 }
 
 @utility fade-in {
@@ -153,9 +378,9 @@
 @utility skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    var(--surface-elevated) 0%,
-    var(--surface-muted) 50%,
-    var(--surface-elevated) 100%
+    var(--surface-subtle) 0%,
+    var(--surface-hover) 50%,
+    var(--surface-subtle) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
