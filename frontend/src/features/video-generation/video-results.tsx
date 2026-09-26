@@ -13,7 +13,7 @@ import { MediaPreview } from "@/components/generation/media-preview";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip } from "@/components/ui/tooltip";
-import { downloadUrl, ratioToStyle } from "@/lib/media";
+import { DOWNLOAD_PREFIX, downloadUrl, ratioToStyle } from "@/lib/media";
 import type { Generation, ModelSpec } from "@/types/generation";
 
 interface VideoResultsProps extends GroupActions {
@@ -91,7 +91,7 @@ function VideoGroup({
   const pending = generation.status === "queued" || generation.status === "processing";
   const failed = generation.status === "failed" || (generation.status === "completed" && !asset);
   const seconds = generation.settings.duration_s;
-  const filename = `higgsfield-${generation.id.slice(0, 8)}.mp4`;
+  const filename = `${DOWNLOAD_PREFIX}-${generation.id.slice(0, 8)}.mp4`;
   const meta = [seconds ? `${seconds}s` : null, ratio, generation.settings.reference_asset_id ? "image to video" : null]
     .filter((v): v is string => Boolean(v));
 

@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 
 import { ConceptPage } from "@/components/discovery/concept-page";
 
-export const metadata: Metadata = { title: "3D Jutsu" };
+/*
+ * The route keeps its historical path so existing links and tests stay valid, but the concept
+ * is named for what it does rather than for another product's brand.
+ */
+export const metadata: Metadata = { title: "Scene blocking" };
 
-export default function ThreeDJutsuPage() {
+export default function SceneBlockingPage() {
   return (
     <ConceptPage
       eyebrow="Concept / Video"
-      title="3D Jutsu"
+      title="Scene blocking"
       description="Block out a scene in three dimensions — characters, props, environment and camera — then render it as a cinematic clip."
       note="Preview only. There is no 3D scene generation, viewer, camera rig or mesh export in this build. Cinema Studio composes a shot from the same cinematic language and hands it to the video generator that does run."
       seed="3d-jutsu"

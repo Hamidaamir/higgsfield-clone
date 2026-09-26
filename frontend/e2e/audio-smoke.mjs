@@ -14,7 +14,7 @@ await page.waitForSelector("#audio-script");
 const form = page.getByRole("form", { name: "Speech generator" });
 await form.getByRole("button", { name: "Model", exact: true }).click();
 await page.getByRole("option", { name: new RegExp(modelName) }).click();
-await page.fill("#audio-script", "Welcome to Higgsfield. Lifelike speech from any script, ready for your projects.");
+await page.fill("#audio-script", "Welcome to Forma. Lifelike speech from any script, ready for your projects.");
 const t = Date.now();
 await page.getByRole("form", { name: "Speech generator" }).locator('button[type="submit"]').click();
 await page.waitForSelector('[role="status"]', { timeout: 15000 });

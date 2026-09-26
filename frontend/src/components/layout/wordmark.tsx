@@ -4,9 +4,9 @@ import { siteConfig } from "@/lib/config/site";
 import { cn } from "@/lib/utils";
 
 /**
- * Editorial wordmark: the name set in the display serif with an accent full stop, the way a
- * creative publication signs a masthead. Text rather than an image asset, so it inherits the
- * theme, scales cleanly and stays legible at mobile sizes.
+ * Editorial wordmark: the name set in the display serif, in caps, with an accent full stop —
+ * the way a creative publication signs a masthead. Type rather than an image asset, so it
+ * inherits the theme, scales cleanly and stays legible at mobile sizes.
  */
 export function Wordmark({ className, href = "/" }: { className?: string; href?: string }) {
   return (
@@ -18,10 +18,10 @@ export function Wordmark({ className, href = "/" }: { className?: string; href?:
         className,
       )}
     >
-      <span className="editorial-display text-[19px] leading-none tracking-[-0.01em] sm:text-[21px]">
+      <span className="editorial-display text-[19px] uppercase leading-none tracking-[0.04em] sm:text-[21px]">
         {siteConfig.name}
       </span>
-      <span aria-hidden className="editorial-display ml-px text-[19px] leading-none text-accent sm:text-[21px]">
+      <span aria-hidden className="editorial-display text-[19px] leading-none text-accent sm:text-[21px]">
         .
       </span>
     </Link>

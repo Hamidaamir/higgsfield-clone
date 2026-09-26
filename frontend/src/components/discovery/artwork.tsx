@@ -34,7 +34,7 @@ const between = (r: () => number, lo: number, hi: number) => round1(lo + r() * (
 export function themeForSeed(seed: string): ArtTheme {
   const s = seed.toLowerCase();
   if (/effect|fx|glitch|storm|burst|viral|genjutsu|jutsu/.test(s)) return "effects";
-  if (/soul|fashion|editorial|poster|portrait|moodboard|influencer|photodump/.test(s)) return "editorial";
+  if (/fashion|editorial|poster|portrait|moodboard|influencer|photodump/.test(s)) return "editorial";
   if (/ad|mk-|market|product|brand|ugc|unbox|commercial|click/.test(s)) return "advertising";
   if (/character|face|swap|avatar|persona|klein|edit|relight|inpaint/.test(s)) return "character";
   if (/tool|canvas|mcp|cli|chatgpt|supercomputer|studio|integration|academy|upscale|reframe|explainer|shorts|mixed/.test(s)) return "tools";
@@ -220,7 +220,7 @@ function Editorial({ r, p, id, x0, w }: SceneProps) {
       <rect x={x0} y={between(r, 380, 470)} width={w} height="3" fill={ink} opacity="0.7" />
       <g fill={ink} opacity="0.85" fontFamily="ui-monospace, monospace" fontSize="18" letterSpacing="4">
         <text x="400" y="64" textAnchor="middle">{pick(r, ["FW26", "SS27", "No. 03", "VOL. II", "ISSUE 9"])}</text>
-        <text x="400" y="556" textAnchor="middle">{pick(r, ["SOUL", "STILL", "EDIT", "LOOK 04", "STUDIO"])}</text>
+        <text x="400" y="556" textAnchor="middle">{pick(r, ["FORM", "STILL", "EDIT", "LOOK 04", "STUDIO"])}</text>
       </g>
       <rect x={between(r, 500, 640)} y={between(r, 60, 140)} width="120" height="160" fill="none" stroke={p.hi} strokeWidth="3" opacity="0.6" filter={`url(#${id}-soft)`} />
     </g>

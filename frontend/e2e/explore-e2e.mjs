@@ -30,7 +30,7 @@ try {
     await page.locator(`#${kind}-prompt`).waitFor();
     check(`${kind} composer prefilled`,await page.locator(`#${kind}-prompt`).inputValue()===prompt);
   }
-  for(const [category,real,preview] of [['image','flux-1-schnell','higgsfield-soul-2'],['video','ltx-video','seedance-2-5'],['audio','aura-1','seed-audio-1']]) {
+  for(const [category,real,preview] of [['image','flux-1-schnell','gpt-image-2-5-sunburst'],['video','ltx-video','seedance-2-5'],['audio','aura-1','seed-audio-1']]) {
     await goto(page,`/${category}`);
     check(`${category} catalog availability labels`,await page.locator('article[data-status=available]').count()>0 && await page.locator('article[data-status=preview]').count()>0);
     check(`${category} available model href`,await page.locator(`main a[href="/generate/${category}?model=${real}"]`).count()===1);
@@ -41,7 +41,7 @@ try {
     check(`${category} preview explains boundary`,await page.getByText(/This model is not connected to generation here/).isVisible());
     check(`${category} preview has no controls`,await page.locator('main input,main textarea,main button').count()===0);
   }
-  for(const [path,name,available] of [['/models/flux-1-schnell','model-available',true],['/models/higgsfield-soul-2','model-preview',false],['/tools/create-image','tool-available',true],['/tools/relight','tool-preview',false]]) {
+  for(const [path,name,available] of [['/models/flux-1-schnell','model-available',true],['/models/gpt-image-2-5-sunburst','model-preview',false],['/tools/create-image','tool-available',true],['/tools/relight','tool-preview',false]]) {
     await goto(page,path); check(`${name} accurate status`,await page.locator('main').getByText(available?'Available':'Preview',{exact:true}).isVisible()); await matrix(page,name);
   }
   // Every available tool must open its real studio and must never carry preview language.

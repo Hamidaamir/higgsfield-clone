@@ -24,8 +24,12 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: { default: siteConfig.name, template: `%s · ${siteConfig.name}` },
+  title: {
+    default: `${siteConfig.name} — ${siteConfig.descriptor}`,
+    template: `%s · ${siteConfig.name}`,
+  },
   description: siteConfig.description,
+  applicationName: siteConfig.name,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

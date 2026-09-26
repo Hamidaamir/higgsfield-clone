@@ -41,7 +41,7 @@ export function SiteFooter() {
         </div>
 
         <p className="mt-12 border-t border-border-subtle pt-6 text-xs text-foreground-subtle">
-          Assessment build — not affiliated with Higgsfield, Inc.
+          {siteConfig.descriptor}.
         </p>
       </div>
     </footer>

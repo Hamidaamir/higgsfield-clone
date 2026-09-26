@@ -11,8 +11,8 @@ page.on('request', (r) => {
 
 const PREVIEW_ROUTES = [
   ['/canvas', 'Canvas'],
-  ['/genjutsu', 'Genjutsu'],
-  ['/3d-jutsu', '3D Jutsu'],
+  ['/genjutsu', 'Motion transfer'],
+  ['/3d-jutsu', 'Scene blocking'],
   ['/supercomputer', 'Supercomputer'],
   ['/academy', 'Academy'],
   ['/contests', 'Contests'],

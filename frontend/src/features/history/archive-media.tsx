@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { Waveform } from "@/components/generation/waveform";
 import { useAsset } from "@/hooks/use-asset";
-import { aspectRatioStyle, downloadUrl, ratioToStyle } from "@/lib/media";
+import { DOWNLOAD_PREFIX, aspectRatioStyle, downloadUrl, ratioToStyle } from "@/lib/media";
 import type { Asset, Generation } from "@/types/generation";
 
 export interface ArchiveMediaProps {
@@ -18,7 +18,7 @@ const focus = "focus-visible:outline focus-visible:outline-2 focus-visible:outli
 
 /** Small, always-visible actions shared across plates and takes. */
 function AssetActions({ generation, asset, index, onOpen }: ArchiveMediaProps & { asset: Asset; index: number }) {
-  const filename = `higgsfield-${generation.id.slice(0, 8)}-${index + 1}`;
+  const filename = `${DOWNLOAD_PREFIX}-${generation.id.slice(0, 8)}-${index + 1}`;
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-foreground-muted">
       <button type="button" className={`${focus} min-h-8 hover:text-accent-text`} onClick={() => onOpen(generation, index)} aria-label={`Details for output ${index + 1}: ${generation.prompt}`}>Details</button>

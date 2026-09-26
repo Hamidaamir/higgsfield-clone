@@ -44,11 +44,11 @@ export function StudioShowcase() {
               className="transition-transform duration-500 group-hover:-translate-y-1"
             />
             <p className="mt-2.5 truncate text-[13px] text-foreground">{post.title}</p>
-            {/* Only claim a real output when the real asset is what is actually on screen:
-                video pieces fall back to a rendered plate, so they stay unlabelled. */}
+            {/* Only claim a real output when the real asset is what is actually on screen;
+                video pieces fall back to a rendered plate, so they say what they are. */}
             <p className="mt-0.5 truncate text-[11px] text-foreground-subtle">
               {post.model}
-              {post.media?.kind === "image" ? " · real output" : ""}
+              {post.media?.kind === "image" ? " · real output" : " · concept artwork"}
             </p>
           </Link>
         ))}

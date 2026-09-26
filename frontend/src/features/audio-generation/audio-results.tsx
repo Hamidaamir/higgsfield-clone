@@ -11,7 +11,7 @@ import {
 import { Waveform } from "@/components/generation/waveform";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
-import { downloadUrl } from "@/lib/media";
+import { DOWNLOAD_PREFIX, downloadUrl } from "@/lib/media";
 import type { Asset, Generation, ModelSpec } from "@/types/generation";
 
 interface AudioResultsProps extends GroupActions {
@@ -122,7 +122,7 @@ function TakeRow({
   onOpen: (g: Generation) => void;
 }) {
   const seconds = asset.duration_ms ? Math.round(asset.duration_ms / 1000) : null;
-  const filename = `higgsfield-${generation.id.slice(0, 8)}${total > 1 ? `-${index + 1}` : ""}.mp3`;
+  const filename = `${DOWNLOAD_PREFIX}-${generation.id.slice(0, 8)}${total > 1 ? `-${index + 1}` : ""}.mp3`;
 
   return (
     <figure className="border border-border-subtle bg-surface p-3">

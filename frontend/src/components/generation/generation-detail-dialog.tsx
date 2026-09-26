@@ -9,7 +9,7 @@ import { typeLabel } from "@/components/generation/generation-type-icon";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { formatDateTime, formatDuration } from "@/lib/format";
-import { downloadUrl } from "@/lib/media";
+import { DOWNLOAD_PREFIX, downloadUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { Generation, ModelSpec } from "@/types/generation";
 
@@ -65,7 +65,7 @@ function DetailBody({
   const asset = generation.assets[index];
   const failed = generation.status === "failed";
   const active = generation.status === "queued" || generation.status === "processing";
-  const filename = `higgsfield-${generation.id.slice(0, 8)}-${index + 1}`;
+  const filename = `${DOWNLOAD_PREFIX}-${generation.id.slice(0, 8)}-${index + 1}`;
   const duration = formatDuration(generation.started_at, generation.completed_at);
 
   return (
