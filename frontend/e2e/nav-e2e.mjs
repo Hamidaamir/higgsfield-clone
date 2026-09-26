@@ -37,7 +37,6 @@ check("explore has curated galleries", (await page.locator("section[aria-label]"
 check("explore shows the real FLUX output shipped with the app", (await page.locator('img[src*="flux-lime-jacket"]').count()) >= 1);
 check("explore plays the real LTX clip shipped with the app", (await page.locator('video[src*="/showcase/ltx-paper-boat"]').count()) >= 1);
 check("discovery artwork is rendered locally (no third-party photo hosts)", (await page.locator('img[src^="http"]').count()) === 0);
-await primaryNavLanguage(page);
 await page.screenshot({ path: `${shots}/60-explore.png` });
 
 await page.getByRole("link", { name: /Higgsfield Effects/ }).click();
@@ -55,21 +54,24 @@ await page.goto(`${base}/image`);
 check("/image catalog lists Available and Preview tools", (await page.getByText("Available now").count()) >= 2 && (await page.getByText("Preview", { exact: true }).count()) >= 5);
 check("real image model card links to the generator", (await page.locator('section[aria-label="Models"] a[href^="/generate/image?model="]').count()) >= 1);
 const primaryNav = page.getByRole("navigation", { name: "Primary" });
-async function primaryNavLanguage(p) {
-  await p.getByRole("button", { name: "Language" }).click();
-  const current = p.locator('[aria-current="true"]', { hasText: "English" });
-  check("language menu opens and marks English as the only available language", await visible(current));
-  await p.keyboard.press("Escape");
-}
-await page.waitForLoadState("networkidle"); // hover needs the hydrated nav
-await primaryNav.getByRole("link", { name: "Video", exact: true }).hover();
-const menuLink = primaryNav.locator('a[href="/generate/video"]');
-await menuLink.first().waitFor({ state: "visible" });
-check("video mega menu opens on hover with the real generator", await menuLink.first().isVisible());
+// The dense mega menu was replaced by the Studio panel: four real workspaces, click to open.
+await page.waitForLoadState("networkidle");
+await page.getByRole("button", { name: /^Studio/ }).click();
+const studioPanel = page.getByRole("dialog");
+await studioPanel.waitFor({ state: "visible" });
+const studioLinks = await studioPanel.getByRole("link").evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+check(
+  "Studio panel lists exactly the four real workspaces",
+  JSON.stringify(studioLinks) ===
+    JSON.stringify(["/generate/image", "/generate/video", "/generate/audio", "/edit/image"]),
+  studioLinks.join(", "),
+);
 await page.keyboard.press("Escape");
-check("Escape closes the mega menu", (await menuLink.count()) === 0);
-const colorOf = (href) => primaryNav.locator(`a[href="${href}"]`).evaluate((a) => getComputedStyle(a).color);
-check("nav marks the current section", (await colorOf("/image")) !== (await colorOf("/video")));
+check("Escape closes the Studio panel", (await page.getByRole("dialog").count()) === 0);
+// Active section is shown with accent text and nothing else.
+const sectionColor = (label) =>
+  primaryNav.getByRole("link", { name: label, exact: true }).evaluate((a) => getComputedStyle(a).color);
+check("nav marks the current section", (await sectionColor("Explore")) !== (await sectionColor("Archive")));
 
 // Preview product pages are honest and link back to a working path.
 await page.goto(`${base}/tools/relight`);
@@ -150,9 +152,9 @@ await page.goto(`${base}/generate/audio`);
 check("audio generator reachable", await visible(page.getByRole("form", { name: "Speech generator" })));
 check("audio Voice Change / Translate tabs open honest preview pages", (await page.locator('a[role="tab"][href="/tools/voice-change"]').count()) === 1 && (await page.locator('a[role="tab"][href="/tools/translate"]').count()) === 1);
 await page.getByRole("button", { name: "Account menu" }).click();
-await page.getByRole("menuitem", { name: "History" }).click();
+await page.getByRole("menuitem", { name: "Archive" }).click();
 await page.waitForURL(/\/history$/);
-check("account menu → History", true);
+check("account menu → Archive opens History", true);
 await page.goto(`${base}/settings`);
 check("settings shows the real account", await visible(page.getByText(email)));
 await page.goto(`${base}/projects`);
@@ -173,10 +175,17 @@ await mp.goto(`${base}/`, { waitUntil: "networkidle" });
 await mp.getByRole("button", { name: "Open navigation" }).click();
 const drawer = mp.getByRole("navigation", { name: "Mobile" });
 await drawer.waitFor({ state: "visible" });
-check("mobile drawer lists the primary sections", (await drawer.getByRole("link").count()) >= 10);
+const drawerHrefs = await drawer.getByRole("link").evaluateAll((els) => els.map((e) => e.getAttribute("href")));
+check(
+  "mobile drawer lists every section and the four studios",
+  ["/", "/history", "/community", "/generate/image", "/generate/video", "/generate/audio", "/edit/image"].every((h) =>
+    drawerHrefs.includes(h),
+  ),
+  drawerHrefs.join(", "),
+);
 await mp.screenshot({ path: `${shots}/62-mobile-drawer.png` });
-await drawer.getByRole("link", { name: "Video", exact: true }).click();
-await mp.waitForURL(/\/video$/);
+await drawer.getByRole("link", { name: "Explore", exact: true }).click();
+await mp.waitForURL(/\/community$/);
 check("mobile drawer navigates and closes", (await mp.getByRole("navigation", { name: "Mobile" }).count()) === 0);
 check("no mobile page errors", mErrors.length === 0, mErrors.join(" | ").slice(0, 200));
 

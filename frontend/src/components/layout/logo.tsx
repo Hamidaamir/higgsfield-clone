@@ -1,29 +1,3 @@
-import Link from "next/link";
-
-import { cn } from "@/lib/utils";
-
-interface LogoProps {
-  className?: string;
-  /** Lime tile variant used in the auth modal. */
-  tone?: "dark" | "accent";
-}
-
-export function Logo({ className, tone = "dark" }: LogoProps) {
-  return (
-    <Link
-      href="/"
-      aria-label="Higgsfield home"
-      className={cn(
-        "inline-flex size-9 shrink-0 items-center justify-center rounded-lg",
-        tone === "dark" ? "bg-surface-muted text-text-primary" : "bg-accent text-accent-foreground",
-        className,
-      )}
-    >
-      <LogoMark className="size-5" />
-    </Link>
-  );
-}
-
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>

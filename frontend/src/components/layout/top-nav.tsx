@@ -1,172 +1,77 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { Check, Globe, Menu, Sparkles, Tag, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useState } from "react";
 
-import { AccountControls } from "@/components/layout/account-controls";
-import { Logo } from "@/components/layout/logo";
-import { MegaMenu } from "@/components/layout/mega-menu";
+import { AccountControls, AccountPanel } from "@/components/layout/account-controls";
+import { StudioMenu } from "@/components/layout/studio-menu";
+import { Wordmark } from "@/components/layout/wordmark";
+import { ThemeMenu } from "@/components/theme/theme-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Badge, navBadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { megaMenus, primaryNav, type MegaMenuKey } from "@/lib/config/nav";
+import { activeSection, navSections, studioItems } from "@/lib/config/navigation";
 import { cn } from "@/lib/utils";
 
-const HOVER_CLOSE_DELAY_MS = 120;
-
-const isActivePath = (pathname: string, href: string) =>
-  href === "/" ? pathname === "/" : pathname.startsWith(href.split("?")[0]);
-
+/**
+ * Editorial header: wordmark, four sections, theme and account. One hairline rule, no
+ * background fill, no chrome. The active section is shown with accent text and nothing
+ * else — a single restrained treatment.
+ */
 export function TopNav() {
   const pathname = usePathname();
-  const [openMenu, setOpenMenu] = useState<MegaMenuKey | null>(null);
-  const closeTimer = useRef<number | null>(null);
-
-  const cancelClose = useCallback(() => {
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    closeTimer.current = null;
-  }, []);
-
-  const scheduleClose = useCallback(() => {
-    cancelClose();
-    closeTimer.current = window.setTimeout(() => setOpenMenu(null), HOVER_CLOSE_DELAY_MS);
-  }, [cancelClose]);
-
-  const closeMenu = useCallback(() => setOpenMenu(null), []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenMenu(null);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
+  const current = activeSection(pathname);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="relative flex h-14 items-center gap-2 px-3 sm:px-4">
-        <Logo />
+    <header className="sticky top-0 z-40 border-b border-border-subtle bg-canvas/95 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-4 px-4 sm:px-6">
+        <Wordmark />
 
-        <nav aria-label="Primary" className="relative hidden min-w-0 flex-1 lg:block">
-          <ul className="flex items-center gap-0.5 overflow-x-auto scrollbar-none [mask-image:linear-gradient(to_right,black_calc(100%-32px),transparent)]">
-            {primaryNav.map((item) => {
-              const active = isActivePath(pathname, item.href);
-              const hasMenu = Boolean(item.menu);
-              const expanded = hasMenu && openMenu === item.menu;
-              return (
-                <li
-                  key={item.label}
-                  className="shrink-0"
-                  onMouseEnter={() => {
-                    cancelClose();
-                    setOpenMenu(item.menu ?? null);
-                  }}
-                  onMouseLeave={scheduleClose}
-                >
+        <nav aria-label="Primary" className="hidden flex-1 justify-center lg:flex">
+          <ul className="flex items-center gap-7">
+            {navSections.map((section) =>
+              section.id === "studio" ? (
+                <li key={section.id}>
+                  <StudioMenu active={current === "studio"} />
+                </li>
+              ) : (
+                <li key={section.id}>
                   <Link
-                    href={item.href}
-                    aria-haspopup={hasMenu ? "menu" : undefined}
-                    aria-expanded={hasMenu ? expanded : undefined}
-                    onFocus={() => setOpenMenu(item.menu ?? null)}
-                    onClick={closeMenu}
+                    href={section.href as string}
+                    aria-current={current === section.id ? "page" : undefined}
                     className={cn(
-                      "flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13px] font-medium transition-colors",
-                      active
-                        ? "text-accent"
-                        : expanded
-                          ? "bg-surface-muted text-text-primary"
-                          : "text-text-secondary hover:text-text-primary",
+                      "inline-flex h-8 items-center text-[13px] transition-colors",
+                      current === section.id
+                        ? "text-accent-text"
+                        : "text-foreground-muted hover:text-foreground",
                     )}
                   >
-                    {item.label}
-                    {item.badge ? <Badge variant={navBadgeVariant(item.badge)}>{item.badge}</Badge> : null}
+                    {section.label}
                   </Link>
                 </li>
-              );
-            })}
+              ),
+            )}
           </ul>
-
-          {openMenu ? (
-            <div
-              className="absolute left-0 top-full z-50 pt-2"
-              onMouseEnter={cancelClose}
-              onMouseLeave={scheduleClose}
-            >
-              <MegaMenu menu={megaMenus[openMenu]} onNavigate={closeMenu} />
-            </div>
-          ) : null}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1.5">
-          <Link
-            href="/pricing"
-            className="relative hidden h-8 items-center gap-1.5 rounded-lg bg-surface-muted px-3 text-[13px] font-semibold text-text-primary hover:bg-surface-hover md:flex"
-          >
-            <Tag className="size-3.5" aria-hidden />
-            Pricing
-            <Badge variant="promo" className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-1.5 text-[9px]">
-              30% OFF
-            </Badge>
-          </Link>
-          <Link
-            href="/enterprise"
-            className="hidden h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-semibold text-text-secondary hover:text-text-primary md:flex"
-          >
-            <Sparkles className="size-3.5" aria-hidden />
-            Enterprise
-          </Link>
-          <ThemeToggle className="hidden md:inline-flex" />
-          <LanguageMenu />
-          <span className="mx-1 hidden h-5 w-px bg-border md:block" aria-hidden />
-          {/* useSearchParams inside; the skeleton keeps the nav width stable while it resolves. */}
-          <Suspense fallback={<span className="h-8 w-24 rounded-lg skeleton-shimmer" aria-hidden />}>
-            <AccountControls />
+        <div className="ml-auto flex items-center gap-1 lg:ml-0">
+          <ThemeMenu />
+          <span className="mx-1 hidden h-4 w-px bg-border-subtle lg:block" aria-hidden />
+          <Suspense fallback={<span className="h-8 w-24 skeleton-shimmer" aria-hidden />}>
+            <div className="hidden lg:block">
+              <AccountControls />
+            </div>
           </Suspense>
-          <MobileNav />
+          <MobileNav current={current} />
         </div>
       </div>
     </header>
   );
 }
 
-const LANGUAGES = ["English", "Español", "Português", "Deutsch", "日本語", "한국어"];
-
-/** The reference has a language switcher; this build ships English only, and says so. */
-function LanguageMenu() {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label="Language"
-          className="hidden size-8 items-center justify-center rounded-lg text-text-secondary hover:bg-surface-muted hover:text-text-primary data-[state=open]:bg-surface-muted md:flex"
-        >
-          <Globe className="size-4" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-52">
-        <p className="px-2 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-text-secondary">Language</p>
-        <ul className="space-y-0.5">
-          {LANGUAGES.map((lang, i) => (
-            <li
-              key={lang}
-              aria-current={i === 0 ? "true" : undefined}
-              className={cn("flex items-center justify-between rounded-lg px-2 py-1.5 text-[13px]", i === 0 ? "bg-surface-muted font-semibold text-text-primary" : "text-text-muted")}
-            >
-              {lang}
-              {i === 0 ? <Check className="size-3.5 text-accent" aria-hidden /> : <span className="text-[10px]">Soon</span>}
-            </li>
-          ))}
-        </ul>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-function MobileNav() {
+function MobileNav({ current }: { current: ReturnType<typeof activeSection> }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const close = () => setOpen(false);
@@ -180,48 +85,80 @@ function MobileNav() {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay lg:hidden" />
-        <Dialog.Content className="fixed inset-y-0 right-0 z-50 flex w-[86vw] max-w-sm flex-col border-l border-border bg-surface p-4 shadow-menu focus:outline-none lg:hidden">
-          <div className="flex items-center justify-between">
-            <Dialog.Title className="text-base font-semibold">Menu</Dialog.Title>
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="fixed inset-y-0 right-0 z-50 flex w-[88vw] max-w-sm flex-col border-l border-border-default bg-canvas focus:outline-none lg:hidden"
+        >
+          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border-subtle px-4">
+            <Dialog.Title className="editorial-label">Menu</Dialog.Title>
             <Dialog.Close asChild>
               <Button variant="ghost" size="icon" aria-label="Close navigation">
                 <X className="size-5" />
               </Button>
             </Dialog.Close>
           </div>
-          <nav aria-label="Mobile" className="mt-4 flex-1 overflow-y-auto scrollbar-thin">
-            <ul className="space-y-0.5">
-              {primaryNav.map((item) => (
-                <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    onClick={close}
-                    className={cn(
-                      "flex items-center justify-between rounded-lg px-3 py-2.5 text-[15px] font-medium hover:bg-surface-muted",
-                      isActivePath(pathname, item.href) ? "text-accent" : "text-text-primary",
-                    )}
-                  >
-                    {item.label}
-                    {item.badge ? <Badge variant={navBadgeVariant(item.badge)}>{item.badge}</Badge> : null}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link href="/pricing" onClick={close} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-[15px] font-medium hover:bg-surface-muted">
-                  Pricing <Badge variant="promo">30% OFF</Badge>
-                </Link>
-              </li>
-              <li>
-                <Link href="/enterprise" onClick={close} className="block rounded-lg px-3 py-2.5 text-[15px] font-medium hover:bg-surface-muted">
-                  Enterprise
-                </Link>
-              </li>
+
+          <nav aria-label="Mobile" className="flex-1 overflow-y-auto scrollbar-thin px-4 py-5">
+            <ul className="flex flex-col">
+              {navSections.map((section) =>
+                section.id === "studio" ? (
+                  // Studio is expanded inline: the four workspaces are one tap away, not nested.
+                  <li key={section.id} className="py-3">
+                    <p
+                      className={cn(
+                        "editorial-label",
+                        current === "studio" && "text-accent-text",
+                      )}
+                    >
+                      Studio
+                    </p>
+                    <ul className="mt-2 flex flex-col border-l border-border-subtle">
+                      {studioItems.map((item) => (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            onClick={close}
+                            aria-current={pathname === item.href ? "page" : undefined}
+                            className={cn(
+                              "flex items-center gap-3 py-2.5 pl-4 text-[15px] transition-colors",
+                              pathname === item.href ? "text-accent-text" : "text-foreground",
+                            )}
+                          >
+                            <item.icon className="size-4 shrink-0 text-foreground-subtle" aria-hidden />
+                            {item.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ) : (
+                  <li key={section.id} className="border-b border-border-subtle last:border-b-0">
+                    <Link
+                      href={section.href as string}
+                      onClick={close}
+                      aria-current={current === section.id ? "page" : undefined}
+                      className={cn(
+                        "block py-3.5 text-[17px] transition-colors",
+                        current === section.id ? "text-accent-text" : "text-foreground",
+                      )}
+                    >
+                      {section.label}
+                    </Link>
+                  </li>
+                ),
+              )}
             </ul>
-            <div className="mt-4 flex items-center justify-between border-t border-border-subtle px-3 pt-4">
-              <span className="text-[13px] font-medium text-foreground-muted">Theme</span>
+          </nav>
+
+          <div className="shrink-0 border-t border-border-subtle px-4 py-4">
+            <Suspense fallback={<span className="block h-10 w-full skeleton-shimmer" aria-hidden />}>
+              <AccountPanel onNavigate={close} />
+            </Suspense>
+            <div className="mt-4 flex items-center justify-between border-t border-border-subtle pt-4">
+              <span className="editorial-label">Theme</span>
               <ThemeToggle />
             </div>
-          </nav>
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
