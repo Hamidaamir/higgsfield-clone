@@ -4,7 +4,7 @@ import { Check, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { LogoMark } from "@/components/layout/logo";
-import { SettingChip } from "@/components/generator/setting-chip";
+import { SettingChip, type ControlVariant } from "@/components/generator/setting-chip";
 import { Badge, navBadgeVariant } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ interface ModelPickerProps {
   value: ModelSpec | undefined;
   onChange: (model: ModelSpec) => void;
   disabled?: boolean;
+  variant?: ControlVariant;
 }
 
 function badgeLabel(badge: string | null): "New" | "Free" | "TOP" | null {
@@ -25,7 +26,7 @@ function badgeLabel(badge: string | null): "New" | "Free" | "TOP" | null {
 }
 
 /** Searchable model list (name, description, badge, cost) rendered from the server registry. */
-export function ModelPicker({ models, value, onChange, disabled }: ModelPickerProps) {
+export function ModelPicker({ models, value, onChange, disabled, variant = "default" }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
@@ -38,11 +39,21 @@ export function ModelPicker({ models, value, onChange, disabled }: ModelPickerPr
       <PopoverTrigger asChild>
         <SettingChip
           aria-label="Model"
-          icon={<LogoMark className="size-4 text-accent" />}
-          label={value?.name ?? "Choose model"}
+          icon={variant === "editorial" ? undefined : <LogoMark className="size-4 text-accent" />}
+          label={
+            variant === "editorial" ? (
+              <span className="flex items-baseline gap-2">
+                <span className="editorial-label">Model</span>
+                <span className="truncate">{value?.name ?? "Choose"}</span>
+              </span>
+            ) : (
+              (value?.name ?? "Choose model")
+            )
+          }
           expandable
           disabled={disabled}
-          className="max-w-52"
+          variant={variant}
+          className="max-w-64"
         />
       </PopoverTrigger>
       <PopoverContent className="w-[380px] max-w-[calc(100vw-2rem)] p-0">
@@ -87,10 +98,7 @@ export function ModelPicker({ models, value, onChange, disabled }: ModelPickerPr
                     ) : null}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-sm font-semibold">
-                      {model.name}
-                      <span className="text-[11px] font-medium text-text-muted">✦ {model.credit_cost}</span>
-                    </span>
+                    <span className="block text-sm font-semibold">{model.name}</span>
                     <span className="block truncate text-[13px] text-text-secondary">{model.description}</span>
                   </span>
                   {selected ? <Check className="size-4 shrink-0 text-accent" aria-hidden /> : null}

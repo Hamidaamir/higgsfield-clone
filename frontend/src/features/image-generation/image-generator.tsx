@@ -1,15 +1,14 @@
 "use client";
 
-import { BookOpen, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { GenerationDetailDialog } from "@/components/generation/generation-detail-dialog";
-import { GenerationCards } from "@/features/image-generation/generation-card";
+import { GenerationGroup } from "@/features/image-generation/generation-group";
 import { PromptDock } from "@/features/image-generation/prompt-dock";
-import { WorkspaceHero } from "@/features/image-generation/workspace-hero";
+import { WorkspaceEmptyState } from "@/features/image-generation/workspace-hero";
 import {
   useActiveGenerationPolling,
   useCreateImageGeneration,
@@ -44,6 +43,7 @@ export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRat
   const [modelId, setModelId] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState(initialAspectRatio ?? "1:1");
   const [batchSize, setBatchSize] = useState(() => Math.min(4, Math.max(1, initialBatchSize ?? 1)));
+  const [negativePrompt, setNegativePrompt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<{ generation: Generation; assetIndex: number } | null>(null);
   const detailLive = detail ? (listQuery.data?.items.find((g) => g.id === detail.generation.id) ?? detail.generation) : null;
@@ -72,11 +72,14 @@ export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRat
     }
     setError(null);
     try {
+      const trimmedNegative = negativePrompt.trim();
       await create.mutateAsync({
         prompt: parsed.data,
         model_id: model.id,
         aspect_ratio: effectiveAspectRatio,
         batch_size: effectiveBatchSize,
+        // Only sent when the selected model advertises support, so the API never rejects it.
+        ...(model.supports_negative_prompt && trimmedNegative ? { negative_prompt: trimmedNegative } : {}),
       });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -89,6 +92,7 @@ export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRat
     if (modelById(generation.model_id)) setModelId(generation.model_id);
     if (generation.settings.aspect_ratio) setAspectRatio(generation.settings.aspect_ratio);
     if (generation.settings.batch_size) setBatchSize(generation.settings.batch_size);
+    setNegativePrompt(generation.settings.negative_prompt ?? "");
     setDetail(null);
     document.getElementById("image-prompt")?.focus();
   };
@@ -108,37 +112,55 @@ export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRat
   const disabledReason = modelsQuery.isError ? "Models could not be loaded. Refresh to try again." : null;
 
   return (
-    <div className="relative min-h-[calc(100vh-3.5rem)] pb-64 sm:pb-52">
-      <AcademyTip />
+    // Bottom padding clears the fixed composer so the last row is never hidden behind it.
+    <div className="relative min-h-[calc(100vh-3.5rem)] pb-[22rem] sm:pb-60">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+        <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border-subtle py-5">
+          <div>
+            <h1 className="editorial-label">Image Studio</h1>
+            <p className="mt-1 text-[13px] text-foreground-muted">
+              Create still imagery from a written prompt.
+            </p>
+          </div>
+          {items.length > 0 ? (
+            <Link
+              href="/history"
+              className="text-[13px] text-foreground-muted transition-colors hover:text-accent-text"
+            >
+              View archive
+            </Link>
+          ) : null}
+        </header>
 
-      <section className="mx-auto max-w-[1400px] px-4 pt-4 sm:px-6" aria-label="Generated images">
-        {listQuery.isPending ? (
-          <GridSkeleton />
-        ) : listQuery.isError ? (
-          <div className="mx-auto max-w-md py-16 text-center">
-            <p className="text-sm text-text-secondary">Your recent generations could not be loaded.</p>
-            <Button variant="secondary" size="sm" className="mt-3" onClick={() => listQuery.refetch()}>
-              Try again
-            </Button>
-          </div>
-        ) : items.length === 0 ? (
-          <WorkspaceHero />
-        ) : (
-          <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-            {items.map((generation) => (
-              <GenerationCards
-                key={generation.id}
-                generation={generation}
-                model={modelById(generation.model_id)}
-                onOpen={(g, asset) => setDetail({ generation: g, assetIndex: Math.max(0, g.assets.findIndex((a) => a.id === asset.id)) })}
-                onReusePrompt={reusePrompt}
-                onRetry={regenerate}
-                retrying={retry.isPending}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+        <section className="py-6" aria-label="Generated images">
+          {listQuery.isPending ? (
+            <GridSkeleton />
+          ) : listQuery.isError ? (
+            <div className="mx-auto max-w-md py-16 text-center">
+              <p className="text-sm text-foreground-muted">Your recent generations could not be loaded.</p>
+              <Button variant="outline" size="sm" className="mt-3 rounded-none" onClick={() => listQuery.refetch()}>
+                Try again
+              </Button>
+            </div>
+          ) : items.length === 0 ? (
+            <WorkspaceEmptyState />
+          ) : (
+            <div className="flex flex-col gap-8">
+              {items.map((generation) => (
+                <GenerationGroup
+                  key={generation.id}
+                  generation={generation}
+                  model={modelById(generation.model_id)}
+                  onOpen={(g, asset) => setDetail({ generation: g, assetIndex: Math.max(0, g.assets.findIndex((a) => a.id === asset.id)) })}
+                  onReusePrompt={reusePrompt}
+                  onRetry={regenerate}
+                  retrying={retry.isPending}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
       <PromptDock
         prompt={prompt}
@@ -146,6 +168,8 @@ export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRat
           setPrompt(value);
           if (error) setError(null);
         }}
+        negativePrompt={negativePrompt}
+        onNegativePromptChange={setNegativePrompt}
         models={models}
         model={model}
         onModelChange={selectModel}
@@ -186,40 +210,17 @@ function describeError(err: unknown): string {
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" aria-busy="true" aria-label="Loading generations">
-      {Array.from({ length: 8 }, (_, i) => (
-        <div key={i} className="aspect-square rounded-2xl skeleton-shimmer" />
+    <div className="flex flex-col gap-8" aria-busy="true" aria-label="Loading generations">
+      {Array.from({ length: 2 }, (_, group) => (
+        <div key={group} className="border-t border-border-subtle pt-4">
+          <div className="h-3 w-56 skeleton-shimmer" />
+          <div className="mt-4 grid max-w-[42rem] grid-cols-2 gap-3">
+            {Array.from({ length: 2 }, (_, i) => (
+              <div key={i} className="aspect-square skeleton-shimmer" />
+            ))}
+          </div>
+        </div>
       ))}
-    </div>
-  );
-}
-
-function AcademyTip() {
-  const [open, setOpen] = useState(true);
-  if (!open) return null;
-  return (
-    <div className="flex justify-center px-4 pt-4">
-      <div className="flex items-center gap-3 rounded-full border border-border bg-surface-elevated py-1.5 pl-2 pr-1.5 text-sm shadow-card">
-        <span className="flex size-8 items-center justify-center rounded-full bg-surface-muted text-text-secondary">
-          <BookOpen className="size-4" aria-hidden />
-        </span>
-        <span className="hidden sm:block">
-          <span className="font-semibold">Don&apos;t know where to start?</span>
-          <span className="block text-xs text-text-secondary">Go to the Academy and start your journey</span>
-        </span>
-        <span className="font-semibold sm:hidden">New here?</span>
-        <Button asChild variant="white" size="sm" className="rounded-full">
-          <Link href="/academy">Learn now</Link>
-        </Button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          aria-label="Dismiss tip"
-          className="rounded-full p-1.5 text-text-secondary hover:bg-surface-muted hover:text-text-primary"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
     </div>
   );
 }

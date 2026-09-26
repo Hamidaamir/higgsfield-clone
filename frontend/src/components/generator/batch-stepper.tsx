@@ -2,27 +2,41 @@
 
 import { Minus, Plus } from "lucide-react";
 
+import type { ControlVariant } from "@/components/generator/setting-chip";
+import { cn } from "@/lib/utils";
+
 interface BatchStepperProps {
   value: number;
   max: number;
   onChange: (value: number) => void;
   disabled?: boolean;
+  variant?: ControlVariant;
 }
 
 /** "− 1/4 +" control from the reference dock. */
-export function BatchStepper({ value, max, onChange, disabled }: BatchStepperProps) {
+export function BatchStepper({ value, max, onChange, disabled, variant = "default" }: BatchStepperProps) {
+  const editorial = variant === "editorial";
   return (
     <div
       role="group"
       aria-label="Number of images"
-      className="inline-flex h-9 shrink-0 items-center rounded-xl border border-border bg-surface-muted text-[13px] font-semibold"
+      className={cn(
+        "inline-flex h-9 shrink-0 items-center text-[13px]",
+        editorial
+          ? "border border-border-default bg-surface font-medium text-foreground"
+          : "rounded-xl border border-border bg-surface-muted font-semibold",
+      )}
     >
+      {editorial ? <span className="editorial-label pl-3 pr-1">Images</span> : null}
       <button
         type="button"
         aria-label="Fewer images"
         onClick={() => onChange(Math.max(1, value - 1))}
         disabled={disabled || value <= 1}
-        className="flex h-full w-8 items-center justify-center rounded-l-xl text-text-secondary hover:bg-surface-hover hover:text-text-primary disabled:opacity-40 disabled:hover:bg-transparent"
+        className={cn(
+          "flex h-full w-8 items-center justify-center text-foreground-subtle hover:bg-surface-hover hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent",
+          !editorial && "rounded-l-xl",
+        )}
       >
         <Minus className="size-3.5" />
       </button>
@@ -34,7 +48,10 @@ export function BatchStepper({ value, max, onChange, disabled }: BatchStepperPro
         aria-label="More images"
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={disabled || value >= max}
-        className="flex h-full w-8 items-center justify-center rounded-r-xl text-text-secondary hover:bg-surface-hover hover:text-text-primary disabled:opacity-40 disabled:hover:bg-transparent"
+        className={cn(
+          "flex h-full w-8 items-center justify-center text-foreground-subtle hover:bg-surface-hover hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent",
+          !editorial && "rounded-r-xl",
+        )}
       >
         <Plus className="size-3.5" />
       </button>
