@@ -83,3 +83,76 @@ One thing to note: the repo is otherwise empty (just `.git`, `.claude`, and `.ag
 3. **Writing the script via a bash heredoc failed** (quoting through the tool's shell wrapper); wrote it with the editor's file tool instead.
 4. **The session that installed the hooks is not itself in the log.** Claude Code snapshots hook config at session start, so the setup conversation (prompt = the assignment file, response = the setup report) fired no hooks. Every session started after this commit is captured. The setup turn could be back-filled from its transcript with the same extractor if wanted, but that would be a manual, after-the-fact write, so it has not been done.
 5. **`author` field.** It reads `git config agentlog.author`, falling back to `git config user.name` (`Hamidaamir`). The GitHub handle can be set with `git config agentlog.author <handle>`; existing entries are not rewritten.
+
+
+---
+
+## Codex handoff verification
+
+Verified 2026-09-26 UTC. The Claude verification above is preserved byte-for-byte.
+
+- Tool: Codex VS Code, runtime `codex-cli 0.155.0-alpha.16.3`; canaries use the same installed Codex CLI in two independent sessions.
+- Exact model: `gpt-6-astra` for planning and execution, read from native `turn_context` records. No separate planner.
+- Mechanism: automatic native-transcript polling, once per second, by `scripts/codex-capture/capture.py`. Configuration: `scripts/codex-capture/config.json`. The installer creates the per-user Windows Startup shortcut `Higgsfield Codex Capture.lnk` and starts the hidden watcher immediately. Neither Claude configuration nor the existing Codex global notify configuration was changed.
+- Codex supports lifecycle hooks (https://learn.chatgpt.com/docs/hooks); native transcript extraction was selected to include the already-running handoff session. No agent action is required per prompt or response. Startup installation was approved and completed.
+- Current handoff log: `.agent-logs/2026-09-26_06-00-31_01a0dc4d-07cf-77f3-a212-0e495fa4cd21.md`. The original prompt is present; this ongoing turn's final response is captured automatically after it is emitted.
+- Capture is restricted to this repository and the handoff timestamp onward. Existing Claude logs are excluded. Model IDs are recorded per entry, making the tool/model switch visible. Only user prompt text and final response text are exported, with no commentary, reasoning or tool calls.
+- Existing entry bodies are immutable; only new Codex logs' frontmatter counters/current model are refreshed. Logs are not ignored.
+
+### Verification evidence
+
+Two fresh sessions were launched after the parser correction below. The watcher was already running; no export command was invoked for either test. `python scripts/codex-capture/verify.py` independently compared their logged entry bodies to the native transcripts and passed. It also verified all original `.agent-logs/` files and `.claude/` files against pre-change SHA-256 hashes, the original CAPTURE-TEST.md byte prefix, and a live watcher heartbeat. Baseline hashes are in `scripts/codex-capture/preservation.json`.
+
+### Canary session `01a0dc51-d573-7130-b2da-bf48e54a94ed`
+
+Path: `.agent-logs/2026-09-26_06-05-45_01a0dc51-d573-7130-b2da-bf48e54a94ed.md`
+
+Raw entries:
+
+```text
+[LOG_ENTRY type=PROMPT num=1 session=01a0dc51]
+timestamp: 2026-09-26T06:05:48.792Z
+model: gpt-6-astra
+
+CAPTURE TEST — 8x assignment, Hamid Amir
+
+
+[LOG_ENTRY type=RESPONSE num=1 session=01a0dc51]
+timestamp: 2026-09-26T06:05:52.490Z
+model: gpt-6-astra
+
+Received: “CAPTURE TEST — 8x assignment, Hamid Amir.” What would you like me to do with it?
+
+```
+
+### Canary session `01a0dc52-2c2f-7580-aef9-281925e4a398`
+
+Path: `.agent-logs/2026-09-26_06-06-08_01a0dc52-2c2f-7580-aef9-281925e4a398.md`
+
+Raw entries:
+
+```text
+[LOG_ENTRY type=PROMPT num=1 session=01a0dc52]
+timestamp: 2026-09-26T06:06:14.022Z
+model: gpt-6-astra
+
+CAPTURE TEST — 8x assignment, Hamid Amir (second session)
+
+
+[LOG_ENTRY type=RESPONSE num=1 session=01a0dc52]
+timestamp: 2026-09-26T06:06:19.239Z
+model: gpt-6-astra
+
+Received: CAPTURE TEST — 8x assignment, Hamid Amir (second session).
+
+```
+
+### Attempts and limitations
+
+1. The first official documentation URL returned 404; the official Hooks page was then fetched successfully through its redirected Learn URL.
+2. Initial parsing assumed legacy `user_message` events and the `final` phase. The CLI canaries instead used `user.text` response items and `final_answer`. Those first tests did not initially export. The parser was corrected, the watcher restarted, and the original native transcripts were automatically recovered into separate logs (`01a0dc4f-f627-7963-ad2f-3415c3a2227d` and `01a0dc50-b715-7ba3-9103-9f334dc14f55`). They remain untouched. Two additional fresh sessions above proved automatic capture after correction.
+3. CLI canaries reported shell-snapshot/plugin-icon warnings and a terminal rollout-flush warning. Both final responses were nevertheless present in native JSONL and verified exactly in the submission logs. No warning was treated as proof of capture.
+4. The setup uses a local hidden watcher, not newly installed lifecycle hooks. It must remain running, and Windows Startup restarts it on login. Reinstall after moving the repository. Ephemeral Codex sessions cannot be captured. A stopped watcher catches up from retained transcripts when restarted.
+5. This verification proves two new sessions in the current Windows login; an actual reboot/login has not been tested. The startup shortcut is installed.
+6. The first setup reply preceded reading the attached instructions and did not yet state the exact tool/model. They were established from the native record during setup and documented here.
+7. The pre-existing modified Claude log and application changes were left as found and excluded from the Codex setup commit. No assignment building was started.
