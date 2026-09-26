@@ -1,45 +1,101 @@
 import type { Metadata } from "next";
-import { Check } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Pricing" };
 
-const plans = [
-  { name: "Free", price: "$0", period: "forever", tagline: "Everything in this build", features: ["Real image, video and speech generation", "History with reuse and retry", "Free-tier provider quotas", "No card required"], cta: { label: "Start for free", href: "/signup" }, featured: true },
-  { name: "Pro", price: "$29", period: "per month", tagline: "For creators shipping daily", features: ["Higher generation limits", "Priority queues", "Commercial license", "4K upscales"], cta: { label: "Coming soon", href: "/signup" } },
-  { name: "Scale", price: "$99", period: "per month", tagline: "Teams and studios", features: ["Shared workspaces", "SSO", "Usage analytics", "Dedicated support"], cta: { label: "Contact sales", href: "/enterprise" } },
+/**
+ * One plan exists. The other two describe where a paid tier would sit and are marked as
+ * concepts — there is no billing system, so nothing here can be bought.
+ */
+const CURRENT = {
+  name: "Free",
+  price: "$0",
+  note: "What every account gets today.",
+  features: [
+    "Image, video and speech generation",
+    "Reference-guided editing",
+    "An archive with reuse and retry",
+    "No card, no billing",
+  ],
+};
+
+const CONCEPTS = [
+  {
+    name: "Pro",
+    note: "Where a single-creator tier would sit.",
+    features: ["Higher generation limits", "Priority queueing", "Commercial licence", "Upscaling"],
+  },
+  {
+    name: "Scale",
+    note: "Where a team tier would sit.",
+    features: ["Shared workspaces", "Single sign-on", "Usage reporting", "Dedicated support"],
+  },
 ];
 
 export default function PricingPage() {
   return (
-    <div className="mx-auto max-w-[1200px] px-4 pb-16 pt-10 sm:px-6">
-      <div className="text-center">
-        <span className="inline-flex rounded-full bg-promo px-3 py-1 text-xs font-bold uppercase text-white">30% off</span>
-        <h1 className="display-heading mt-4 text-4xl sm:text-6xl">Plans for every creator</h1>
-        <p className="mx-auto mt-3 max-w-xl text-text-secondary">
-          This assessment build runs entirely on free tiers, so the Free plan is the real one. Paid plans are shown for product completeness — no billing is wired up.
-        </p>
-      </div>
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
-        {plans.map((plan) => (
-          <section key={plan.name} className={cn("flex flex-col rounded-3xl border p-6", plan.featured ? "border-accent/60 bg-[radial-gradient(80%_60%_at_50%_0%,rgba(214,255,0,0.12),transparent)] bg-surface shadow-accent" : "border-border bg-surface")}>
-            <h2 className="text-lg font-semibold">{plan.name}</h2>
-            <p className="mt-1 text-sm text-text-secondary">{plan.tagline}</p>
-            <p className="mt-5"><span className="display-heading text-4xl">{plan.price}</span> <span className="text-sm text-text-secondary">{plan.period}</span></p>
-            <ul className="mt-5 flex-1 space-y-2 text-sm">
-              {plan.features.map((f) => (
-                <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />{f}</li>
-              ))}
-            </ul>
-            <Button asChild size="lg" variant={plan.featured ? "primary" : "secondary"} className="mt-6">
-              <Link href={plan.cta.href}>{plan.cta.label}</Link>
-            </Button>
-          </section>
-        ))}
-      </div>
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-8">
+      <header className="border-b border-border-subtle py-5">
+        <h1 className="editorial-label">Pricing</h1>
+        <p className="mt-1 text-[13px] text-foreground-muted">One real plan, and two that are not built.</p>
+      </header>
+
+      <p className="max-w-2xl pt-6 text-[15px] leading-relaxed text-foreground-muted">
+        This build generates through free-tier providers, so the free plan is the whole product.
+        There is no checkout, subscription, invoice or credit balance behind this page.
+      </p>
+
+      <section className="mt-10 grid gap-10 border-t border-border-default pt-8 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+        <div>
+          <p className="editorial-label text-accent-text">Current plan</p>
+          <h2 className="editorial-display mt-3 text-5xl">{CURRENT.name}</h2>
+          <p className="mt-2 text-3xl text-foreground-muted">{CURRENT.price}</p>
+          <p className="mt-4 text-sm leading-relaxed text-foreground-muted">{CURRENT.note}</p>
+          <ul className="mt-6 space-y-3 text-sm">
+            {CURRENT.features.map((feature) => (
+              <li key={feature} className="border-t border-border-subtle pt-3 text-foreground">
+                {feature}
+              </li>
+            ))}
+          </ul>
+          <Button asChild size="lg" className="mt-8 rounded-none shadow-none">
+            <Link href="/signup">Create a free account</Link>
+          </Button>
+        </div>
+
+        <div>
+          <p className="editorial-label text-foreground-muted">Concepts</p>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-foreground-muted">
+            Sketches of paid tiers, listed for completeness. No price is set, nothing can be
+            purchased, and none of these features exist in this build.
+          </p>
+          <div className="mt-6 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-1">
+            {CONCEPTS.map((plan) => (
+              <article key={plan.name} className="border-t border-border-default py-6">
+                <p className="editorial-label text-foreground-subtle">Not available</p>
+                <h3 className="editorial-display mt-2 text-2xl">{plan.name}</h3>
+                <p className="mt-2 text-sm text-foreground-muted">{plan.note}</p>
+                <ul className="mt-3 text-sm text-foreground-muted">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="leading-relaxed">
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+          <p className="mt-6 text-[13px] leading-relaxed text-foreground-muted">
+            Team requirements are described on the{" "}
+            <Link href="/enterprise" className="text-accent-text underline underline-offset-4">
+              teams concept page
+            </Link>
+            .
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

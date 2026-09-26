@@ -1,12 +1,10 @@
 "use client";
 
-import { ArrowRight, Clapperboard } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { Artwork } from "@/components/discovery/artwork";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/input";
+import { composerHref } from "@/lib/generation-links";
 import { cn } from "@/lib/utils";
 
 interface Option {
@@ -42,7 +40,12 @@ const GRADES: Option[] = [
   { id: "pastel", label: "Pastel", phrase: "pastel color palette" },
 ];
 
-/** Cinema Studio's control deck: composes a director-grade prompt and hands it to the real video generator. */
+const SCENE_MAX_LENGTH = 400;
+
+/**
+ * Cinema Studio's control deck. It composes one director-grade sentence and hands it to the
+ * video generator through the shared link helper — nothing here calls a provider.
+ */
 export function ShotComposer() {
   const [scene, setScene] = useState("A lone figure walks through an empty subway station at night");
   const [camera, setCamera] = useState(CAMERAS[1].id);
@@ -50,60 +53,106 @@ export function ShotComposer() {
   const [lighting, setLighting] = useState(LIGHTING[1].id);
   const [grade, setGrade] = useState(GRADES[0].id);
 
+  const trimmed = scene.trim();
   const prompt = useMemo(() => {
     const pick = (list: Option[], id: string) => list.find((o) => o.id === id)?.phrase ?? "";
-    return [scene.trim(), pick(CAMERAS, camera), pick(MOVEMENTS, movement), pick(LIGHTING, lighting), pick(GRADES, grade), "cinematic"].filter(Boolean).join(", ");
+    return [
+      scene.trim(),
+      pick(CAMERAS, camera),
+      pick(MOVEMENTS, movement),
+      pick(LIGHTING, lighting),
+      pick(GRADES, grade),
+      "cinematic",
+    ]
+      .filter(Boolean)
+      .join(", ");
   }, [scene, camera, movement, lighting, grade]);
 
-  const href = `/generate/video?${new URLSearchParams({ prompt, model: "ltx-video", aspect: "16:9" })}`;
+  const href = composerHref({ type: "video", prompt, model: "ltx-video", aspect: "16:9" });
 
   return (
-    <section className="mt-12 grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]" aria-label="Shot composer">
-      <div className="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-4">
-        <label className="block">
-          <span className="text-xs font-medium text-text-secondary">Scene</span>
-          <Textarea value={scene} onChange={(e) => setScene(e.target.value)} className="mt-1.5 min-h-20" maxLength={400} />
-        </label>
+    <div className="grid gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+      <section aria-label="Shot direction">
+        <h2 className="editorial-label border-b border-border-subtle pb-3">Direction</h2>
+
+        <div className="mt-6">
+          <label htmlFor="cinema-scene" className="editorial-label">
+            Scene
+          </label>
+          <textarea
+            id="cinema-scene"
+            value={scene}
+            onChange={(e) => setScene(e.target.value)}
+            rows={3}
+            maxLength={SCENE_MAX_LENGTH}
+            placeholder="Describe what happens in the shot"
+            aria-invalid={trimmed.length === 0 || undefined}
+            className="mt-2.5 min-h-20 w-full resize-none border border-border-default bg-surface-raised px-3 py-2 text-[13px] leading-relaxed text-foreground outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/25 placeholder:text-foreground-subtle"
+          />
+        </div>
+
         <Deck label="Camera & lens" options={CAMERAS} value={camera} onChange={setCamera} />
         <Deck label="Movement" options={MOVEMENTS} value={movement} onChange={setMovement} />
         <Deck label="Lighting" options={LIGHTING} value={lighting} onChange={setLighting} />
-        <Deck label="Color grade" options={GRADES} value={grade} onChange={setGrade} />
-      </div>
-      <div className="flex flex-col rounded-3xl border border-border bg-surface p-4 sm:p-6">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Clapperboard className="size-4 text-accent" aria-hidden />
-          Shot 01 · Director prompt
-        </div>
-        {/* Storyboard frame: the look changes with lighting/grade/camera so the deck feels live. It is a
-            composition sketch, not a render — the real clip comes from LTX Video after "Generate this shot". */}
-        <div className="relative mt-4 flex-1 overflow-hidden rounded-2xl border border-border bg-surface-elevated" style={{ minHeight: 220 }}>
-          <Artwork seed={`shot-${camera}-${movement}-${lighting}-${grade}`} theme={lighting === "studio" ? "advertising" : grade === "bw" ? "editorial" : "cinematic"} />
-          <div className="grain absolute inset-0" aria-hidden />
-          <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">Storyboard sketch</span>
-          <span className="absolute right-3 top-3 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">16:9 · LTX Video</span>
-        </div>
-        <p className="mt-3 rounded-2xl border border-border bg-surface-elevated p-4 text-[15px] leading-relaxed">{prompt}</p>
-        <p className="mt-3 text-xs text-text-secondary">
-          Cinema Studio composes the shot; generation runs through the same LTX Video workflow as Create Video, so the clip lands in your History.
+        <Deck label="Colour grade" options={GRADES} value={grade} onChange={setGrade} />
+      </section>
+
+      <section aria-label="Shot treatment" className="lg:sticky lg:top-20 lg:self-start">
+        <h2 className="editorial-label border-b border-border-subtle pb-3">Shot treatment</h2>
+
+        {/* The composed sentence itself is the output of this page — shown in full, because it
+            is exactly what the video generator will receive. */}
+        <p className="mt-6 border-l-2 border-accent bg-surface-subtle py-4 pl-4 pr-3 text-[15px] leading-relaxed text-foreground">
+          {trimmed ? prompt : "Describe the scene to compose a shot."}
         </p>
-        <div className="mt-4">
-          <Button asChild size="lg" className="shadow-accent" disabled={!scene.trim()}>
-            <Link href={href}>
-              Generate this shot
-              <ArrowRight className="size-4" aria-hidden />
-            </Link>
+
+        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border-subtle pt-4 text-[13px]">
+          <div>
+            <dt className="editorial-label text-foreground-subtle">Generates in</dt>
+            <dd className="mt-1 text-foreground">Video Studio · LTX Video</dd>
+          </div>
+          <div>
+            <dt className="editorial-label text-foreground-subtle">Aspect</dt>
+            <dd className="mt-1 text-foreground">16:9</dd>
+          </div>
+        </dl>
+
+        <p className="mt-6 text-[13px] leading-relaxed text-foreground-muted">
+          Cinema Studio writes the direction; it does not generate. The button below opens Video
+          Studio with this prompt already filled in, and the clip is made — and saved to your
+          archive — there.
+        </p>
+
+        {trimmed ? (
+          <Button asChild size="lg" className="mt-6 rounded-none shadow-none">
+            <Link href={href}>Open in Video Studio</Link>
           </Button>
-        </div>
-      </div>
-    </section>
+        ) : (
+          // A disabled anchor is not a thing, so the link is replaced rather than styled off.
+          <Button size="lg" disabled className="mt-6 rounded-none shadow-none">
+            Open in Video Studio
+          </Button>
+        )}
+      </section>
+    </div>
   );
 }
 
-function Deck({ label, options, value, onChange }: { label: string; options: Option[]; value: string; onChange: (id: string) => void }) {
+function Deck({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: Option[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
   return (
-    <fieldset>
-      <legend className="text-xs font-medium text-text-secondary">{label}</legend>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
+    <fieldset className="mt-6 border-t border-border-subtle pt-4">
+      <legend className="editorial-label">{label}</legend>
+      <div className="mt-2.5 flex flex-wrap gap-2">
         {options.map((option) => (
           <button
             key={option.id}
@@ -111,8 +160,10 @@ function Deck({ label, options, value, onChange }: { label: string; options: Opt
             onClick={() => onChange(option.id)}
             aria-pressed={option.id === value}
             className={cn(
-              "h-8 rounded-lg border px-2.5 text-[13px] font-semibold",
-              option.id === value ? "border-accent bg-accent-muted text-accent" : "border-border bg-surface-elevated text-text-primary hover:bg-surface-muted",
+              "min-h-9 border px-3 text-[13px] transition-colors",
+              option.id === value
+                ? "border-accent-text bg-accent-subtle text-accent-text"
+                : "border-border-default text-foreground-muted hover:bg-surface-subtle hover:text-foreground",
             )}
           >
             {option.label}

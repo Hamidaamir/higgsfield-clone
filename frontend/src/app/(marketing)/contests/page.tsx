@@ -1,29 +1,25 @@
 import type { Metadata } from "next";
-import { Award, CalendarClock, Trophy, Users } from "lucide-react";
 
-import { ProductPage } from "@/components/discovery/product-page";
+import { ConceptPage } from "@/components/discovery/concept-page";
 
 export const metadata: Metadata = { title: "Contests" };
 
 export default function ContestsPage() {
   return (
-    <ProductPage
-      eyebrow="Community"
+    <ConceptPage
+      eyebrow="Concept / Community"
       title="Contests"
-      description="Weekly creative challenges with prompts, deadlines and a community leaderboard."
-      status="preview"
-      statusNote="Contest submissions and leaderboards are representative. Make an entry with any generator and it stays in your History."
-      primary={{ label: "Make an entry", href: "/generate/video" }}
-      secondary={{ label: "See the showcase", href: "/community" }}
+      description="Recurring creative challenges: a shared prompt, a window to make something, and a public showcase of what people made."
+      note="Preview only. There are no live contests, entries, deadlines, prizes, votes, leaderboards or winners in this build, and no submission backend to hold them. Anything you generate is saved to your own archive and nowhere else."
       seed="contests"
-      features={[
-        { icon: Trophy, title: "Global Film Festival", text: "Short films made with AI. $1,000,000 prize pool in the reference product." },
-        { icon: CalendarClock, title: "Weekly prompts", text: "A new theme every Monday; entries close Sunday night." },
-        { icon: Users, title: "Community voting", text: "Likes and jury picks decide the winners." },
-        { icon: Award, title: "Creator partners", text: "Winners are featured on Explore." },
+      primary={{ label: "Make something in Video Studio", href: "/generate/video" }}
+      secondary={{ label: "See the curated showcase", href: "/community" }}
+      points={[
+        { title: "A shared prompt", text: "Everyone starts from the same creative brief." },
+        { title: "A window to make it", text: "Challenges would open and close on a schedule." },
+        { title: "A public showcase", text: "Entries would be browsable together rather than ranked in isolation." },
+        { title: "Featured work", text: "Selected pieces would appear in Explore." },
       ]}
-      gallery={Array.from({ length: 4 }, (_, i) => ({ seed: `contest-g${i}`, href: "/community", alt: `Contest entry ${i + 1}` }))}
-      galleryTitle="Recent entries"
     />
   );
 }

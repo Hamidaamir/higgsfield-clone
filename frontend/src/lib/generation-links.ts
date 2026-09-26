@@ -39,3 +39,20 @@ export function reuseHref(generation: Generation, models: ModelSpec[] | undefine
 export function generatorHref(type: Generation["type"]): string {
   return GENERATOR_ROUTES[type];
 }
+
+/**
+ * Link into a generator from a composition surface (Cinema Studio, Marketing Studio,
+ * Effects). Those surfaces only ever *compose* a prompt — generation happens in the studio
+ * this points at — so the serialisation lives here rather than being rebuilt in each one.
+ */
+export function composerHref(input: {
+  type: Generation["type"];
+  prompt: string;
+  model?: string;
+  aspect?: string;
+}): string {
+  const params = new URLSearchParams({ prompt: input.prompt });
+  if (input.model) params.set("model", input.model);
+  if (input.aspect) params.set("aspect", input.aspect);
+  return `${GENERATOR_ROUTES[input.type]}?${params}`;
+}

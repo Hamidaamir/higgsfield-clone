@@ -1,41 +1,57 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Loader2, RefreshCw, XCircle } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { getHealth } from "@/lib/api/health";
 import { ApiError } from "@/lib/api/client";
+import { getHealth } from "@/lib/api/health";
+import { cn } from "@/lib/utils";
 
+/**
+ * A real check, not a status board: one request to /api/health, reported as it comes back.
+ * There is no uptime history, latency series, incident log or provider status behind it.
+ */
 export function SystemStatus() {
   const health = useQuery({ queryKey: ["health"], queryFn: getHealth, retry: false, staleTime: 0 });
+  const state = health.isFetching ? "loading" : health.isError ? "error" : "ok";
 
   return (
-    <div className="mt-8 rounded-2xl border border-border bg-surface p-5">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Backend API</h2>
-        <Button variant="secondary" size="sm" onClick={() => health.refetch()} disabled={health.isFetching}>
-          <RefreshCw className={health.isFetching ? "size-3.5 animate-spin" : "size-3.5"} aria-hidden />
+    <section className="mt-10 border-t border-border-default pt-6" aria-labelledby="live-check">
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <h2 id="live-check" className="editorial-label">
+          Live check
+        </h2>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="rounded-none"
+          onClick={() => health.refetch()}
+          disabled={health.isFetching}
+        >
+          <RefreshCw className={cn("size-3.5", health.isFetching && "animate-spin")} aria-hidden />
           Re-check
         </Button>
       </div>
 
-      <dl className="mt-4 space-y-3 text-sm">
-        <Row label="API" state={health.isFetching ? "loading" : health.isError ? "error" : "ok"}>
+      <dl className="mt-6 text-sm" aria-live="polite">
+        <Row label="API" state={state}>
           {health.isFetching
-            ? "Starting server…"
+            ? "Checking…"
             : health.isError
               ? describeError(health.error)
-              : `Reachable · v${health.data?.version}`}
+              : `Reachable · version ${health.data?.version}`}
         </Row>
-        <Row
-          label="Database"
-          state={health.isFetching ? "loading" : health.data?.database === "ok" ? "ok" : "error"}
-        >
+        <Row label="Database" state={health.isFetching ? "loading" : health.data?.database === "ok" ? "ok" : "error"}>
           {health.isFetching ? "Waiting…" : health.data?.database === "ok" ? "Connected" : "Unavailable"}
         </Row>
       </dl>
-    </div>
+
+      <p className="mt-6 max-w-xl text-[13px] leading-relaxed text-foreground-muted">
+        Both rows come from a single request made when this page loads. Nothing is polled, stored
+        or averaged, so this is the state of one check rather than a history.
+      </p>
+    </section>
   );
 }
 
@@ -44,14 +60,21 @@ function describeError(error: unknown): string {
   return "Unexpected error.";
 }
 
+/** State is carried by a word, not only by colour. */
 function Row({ label, state, children }: { label: string; state: "ok" | "error" | "loading"; children: React.ReactNode }) {
-  const Icon = state === "ok" ? CheckCircle2 : state === "error" ? XCircle : Loader2;
-  const tone = state === "ok" ? "text-success" : state === "error" ? "text-danger" : "text-text-secondary";
+  const word = state === "ok" ? "OK" : state === "error" ? "Failing" : "Checking";
   return (
-    <div className="flex items-center gap-3">
-      <Icon className={`size-4 shrink-0 ${tone} ${state === "loading" ? "animate-spin" : ""}`} aria-hidden />
-      <dt className="w-24 shrink-0 font-medium">{label}</dt>
-      <dd className="text-text-secondary">{children}</dd>
+    <div className="grid grid-cols-[6rem_5rem_minmax(0,1fr)] items-baseline gap-3 border-t border-border-subtle py-3">
+      <dt className="font-medium text-foreground">{label}</dt>
+      <dd
+        className={cn(
+          "editorial-label",
+          state === "ok" ? "text-accent-text" : state === "error" ? "text-danger" : "text-foreground-subtle",
+        )}
+      >
+        {word}
+      </dd>
+      <dd className="min-w-0 text-foreground-muted [overflow-wrap:anywhere]">{children}</dd>
     </div>
   );
 }
