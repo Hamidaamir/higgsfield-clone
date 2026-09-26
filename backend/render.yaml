@@ -1,14 +1,64 @@
+# Render Blueprint for the Forma API.
+#
+# Migrations are deliberately NOT run here. Render Free has no pre-deploy hook and no shell,
+# and putting `alembic upgrade head` in startCommand would re-run it on every wake from
+# spin-down. Production migrations are applied once from a developer machine against the
+# database URL — see docs/DEPLOYMENT.md.
+#
+# Every value below is non-secret. Secrets are declared with `sync: false`, which makes
+# Render prompt for them in the dashboard and keeps them out of version control.
 services:
   - type: web
-    name: higgsfield-api
+    name: forma-api
     runtime: python
     plan: free
     rootDir: backend
     buildCommand: pip install -e .
-    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
       - key: APP_ENV
         value: production
+
+      # Postgres, as postgresql+asyncpg://… (Supabase direct or session pooler, port 5432).
+      - key: DATABASE_URL
+        sync: false
+      # Long random string; production refuses to boot with the development default.
+      - key: SESSION_SECRET
+        sync: false
+      # The browser-facing frontend origin. Must be the exact https Vercel URL: OAuth
+      # redirect URIs and post-login redirects are built from it.
+      - key: PUBLIC_APP_URL
+        sync: false
+      # JSON array or comma-separated. Only needed for direct (non-proxied) API access.
+      - key: CORS_ORIGINS
+        sync: false
+      # Media root for new uploads; existing assets keep their current paths.
+      - key: CLOUDINARY_ROOT_FOLDER
+        value: forma/production
+
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      - key: CLOUDFLARE_ACCOUNT_ID
+        sync: false
+      - key: CLOUDFLARE_API_TOKEN
+        sync: false
+
+      # Optional. Unset simply disables the feature it powers, without breaking the app:
+      # HF_TOKEN lowers the video quota, GEMINI_API_KEY removes the Gemini TTS model,
+      # and the Google pair hides the Google sign-in button.
+      - key: HF_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false

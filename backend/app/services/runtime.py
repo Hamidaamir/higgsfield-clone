@@ -74,7 +74,7 @@ def build_runtime(settings: Settings) -> GenerationRuntime:
             settings.cloudinary_cloud_name,
             settings.cloudinary_api_key,
             settings.cloudinary_api_secret.get_secret_value(),
-            root_folder=f"higgsfield-clone/{settings.app_env}",
+            root_folder=settings.cloudinary_root,
         )
     else:
         log.warning("Cloudinary credentials missing: media storage disabled")
