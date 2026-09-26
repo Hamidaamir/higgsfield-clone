@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import { SettingChip } from "@/components/generator/setting-chip";
+import { SettingChip, type ControlVariant } from "@/components/generator/setting-chip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -22,17 +22,36 @@ interface OptionPickerProps {
   disabled?: boolean;
   /** Full-width list rows (voices) vs compact chips (languages). */
   variant?: "list" | "chips";
+  /** Trigger styling; `editorial` matches the redesigned workspaces. */
+  control?: ControlVariant;
 }
 
 /** Generic controlled-list chip used for voices and languages; options come from the model registry. */
-export function OptionPicker({ label, icon, options, value, onChange, disabled, variant = "list" }: OptionPickerProps) {
+export function OptionPicker({
+  label,
+  icon,
+  options,
+  value,
+  onChange,
+  disabled,
+  variant = "list",
+  control = "default",
+}: OptionPickerProps) {
   const [open, setOpen] = useState(false);
   const current = options.find((o) => o.id === value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <SettingChip aria-label={label} icon={icon} label={current?.name ?? label} expandable disabled={disabled} />
+        <SettingChip
+          aria-label={label}
+          icon={control === "editorial" ? undefined : icon}
+          label={current?.name ?? label}
+          expandable
+          disabled={disabled}
+          variant={control}
+          className={control === "editorial" ? "w-full justify-between" : undefined}
+        />
       </PopoverTrigger>
       <PopoverContent className={variant === "list" ? "w-72 p-1.5" : "w-64"}>
         <p className="px-2 pb-1.5 pt-1 text-xs font-medium text-text-secondary">{label}</p>

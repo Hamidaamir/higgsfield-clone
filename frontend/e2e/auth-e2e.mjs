@@ -1,7 +1,7 @@
 // Browser-level check of the auth flow against the local stack (next start :3000 + uvicorn :8000).
 import { chromium } from "playwright";
 
-const base = "http://127.0.0.1:3000";
+const base = process.env.E2E_BASE ?? "http://127.0.0.1:3000";
 const shots = process.argv[2];
 const email = `browser-${Date.now()}@example.com`;
 const results = [];

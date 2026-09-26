@@ -2,7 +2,7 @@
 // USE_FAKE_PROVIDERS mode (GENERATION_RATE_LIMIT_PER_MINUTE raised for seeding). No real quota.
 import { chromium } from "playwright";
 
-const base = "http://127.0.0.1:3000";
+const base = process.env.E2E_BASE ?? "http://127.0.0.1:3000";
 const shots = process.argv[2];
 const email = `history-${Date.now()}@example.com`;
 const results = [];

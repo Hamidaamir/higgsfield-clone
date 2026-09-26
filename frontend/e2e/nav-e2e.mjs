@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const base = "http://127.0.0.1:3000";
+const base = process.env.E2E_BASE ?? "http://127.0.0.1:3000";
 const shots = process.argv[2];
 // A 64×64 lime PNG (valid, decodable) for the image-edit before/after check when no file is given.
 const pngPath = process.argv[3] ?? join(shots, "nav-ref.png");
@@ -156,7 +156,16 @@ check("video rail Edit link opens the preview page", true);
 
 await page.goto(`${base}/generate/audio`);
 check("audio generator reachable", await visible(page.getByRole("form", { name: "Speech generator" })));
-check("audio Voice Change / Translate tabs open honest preview pages", (await page.locator('a[role="tab"][href="/tools/voice-change"]').count()) === 1 && (await page.locator('a[role="tab"][href="/tools/translate"]').count()) === 1);
+// The audio rail's mode nav links to the honest preview pages for Voice Change / Translate.
+const audioForm = 'form[aria-label="Speech generator"]';
+check(
+  "audio rail links to the Voice Change / Translate previews",
+  (await page.locator(`${audioForm} a[href="/tools/voice-change"]`).count()) === 1 &&
+    (await page.locator(`${audioForm} a[href="/tools/translate"]`).count()) === 1,
+);
+await page.locator(`${audioForm} a[href="/tools/translate"]`).click();
+await page.waitForURL(/\/tools\/translate$/);
+check("audio rail Translate link opens the preview page", true);
 await page.getByRole("button", { name: "Account menu" }).click();
 await page.getByRole("menuitem", { name: "Archive" }).click();
 await page.waitForURL(/\/history$/);

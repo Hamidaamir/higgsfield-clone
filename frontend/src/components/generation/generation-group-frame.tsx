@@ -10,7 +10,7 @@ import { ratioToStyle } from "@/lib/media";
 import type { Generation, ModelSpec } from "@/types/generation";
 
 /**
- * Presentation shared by the Image and Video results canvases. Only the pieces that are
+ * Presentation shared by the Image, Video and Audio results canvases. Only the pieces that are
  * genuinely identical live here — the group frame, the pending placeholder and the failure
  * annotation. Each studio still owns how its own media is laid out.
  */
@@ -47,7 +47,8 @@ export function GenerationGroupFrame({
       aria-label={`${model?.name ?? generation.model_id}: ${generation.prompt}`}
     >
       <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pb-3">
-        <p className="min-w-0 flex-1 truncate text-[13px] text-foreground" title={generation.prompt}>
+        {/* At narrow widths the prompt keeps its own line so the meta never squeezes it to a word. */}
+        <p className="min-w-0 basis-full truncate text-[13px] text-foreground sm:flex-1 sm:basis-0" title={generation.prompt}>
           {generation.prompt}
         </p>
         <p className="flex shrink-0 items-center gap-1.5 text-[11px] text-foreground-subtle">
@@ -164,6 +165,28 @@ export function FailedAnnotation({
           Retry
         </Button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Pending state for output that has no aspect ratio. Audio would look wrong in an image-shaped
+ * placeholder, so it gets a single compact row instead of a large empty box.
+ */
+export function PendingRow({ generation, model }: { generation: Generation; model: ModelSpec | undefined }) {
+  const elapsed = useElapsed(generation.created_at);
+  const queued = generation.status === "queued";
+  const label = queued ? "Queued" : `Generating with ${model?.name ?? generation.model_id}`;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+      className="flex items-center gap-3 border border-border-subtle bg-surface-subtle px-3 py-3"
+    >
+      <span className="editorial-label text-accent-text">{queued ? "Queued" : "Generating"}</span>
+      <span className="h-6 flex-1 skeleton-shimmer" aria-hidden />
+      <span className="text-[11px] tabular-nums text-foreground-subtle">{elapsed}s</span>
     </div>
   );
 }
