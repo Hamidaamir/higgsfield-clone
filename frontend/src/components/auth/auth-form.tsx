@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
+import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field } from "@/components/ui/field";
@@ -11,23 +11,22 @@ import { Input } from "@/components/ui/input";
 import { useLogin, useSignup } from "@/hooks/use-auth";
 import { ApiError } from "@/lib/api/client";
 import { loginSchema, signupSchema, type LoginInput, type SignupInput } from "@/lib/schemas/auth";
+import { cn } from "@/lib/utils";
 
 export type AuthMode = "signup" | "login";
 
 interface AuthFormProps {
   mode: AuthMode;
-  onBack: () => void;
   onSuccess: () => void;
-  /** Query string (e.g. "?next=%2Fedit%2Fimage") carried across the login ↔ signup switch. */
-  switchQuery?: string;
 }
 
-export function AuthForm({ mode, onBack, onSuccess, switchQuery = "" }: AuthFormProps) {
-  return mode === "signup" ? (
-    <SignupForm onBack={onBack} onSuccess={onSuccess} switchQuery={switchQuery} />
-  ) : (
-    <LoginForm onBack={onBack} onSuccess={onSuccess} switchQuery={switchQuery} />
-  );
+/** Editorial field styling: square, hairline border, its own focus ring (the shared Input
+ *  primitive removes the default outline, and generator surfaces keep their rounded look). */
+const fieldClasses =
+  "h-11 rounded-none border-border-default bg-surface-raised focus:border-accent focus:ring-2 focus:ring-accent/25";
+
+export function AuthForm({ mode, onSuccess }: AuthFormProps) {
+  return mode === "signup" ? <SignupForm onSuccess={onSuccess} /> : <LoginForm onSuccess={onSuccess} />;
 }
 
 function describeError(error: unknown): string {
@@ -38,7 +37,62 @@ function describeError(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-function SignupForm({ onBack, onSuccess, switchQuery }: Omit<AuthFormProps, "mode">) {
+function FormError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p role="alert" className="border-l-2 border-danger bg-danger/5 py-2 pl-3 pr-2 text-[13px] leading-snug text-danger">
+      {message}
+    </p>
+  );
+}
+
+/** Reveal toggle for a password field. Purely client-side; the input keeps its autocomplete. */
+function PasswordField({
+  id,
+  label,
+  error,
+  hint,
+  autoComplete,
+  placeholder,
+  register,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  hint?: string;
+  autoComplete: "new-password" | "current-password";
+  placeholder: string;
+  register: UseFormRegisterReturn;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <Field id={id} label={label} error={error} hint={hint}>
+      <div className="relative">
+        <Input
+          id={id}
+          type={visible ? "text" : "password"}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+          className={cn(fieldClasses, "pr-11")}
+          {...register}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-foreground-subtle transition-colors hover:text-foreground"
+        >
+          {visible ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+        </button>
+      </div>
+    </Field>
+  );
+}
+
+function SignupForm({ onSuccess }: { onSuccess: () => void }) {
   const signup = useSignup();
   const form = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
@@ -69,6 +123,7 @@ function SignupForm({ onBack, onSuccess, switchQuery }: Omit<AuthFormProps, "mod
           placeholder="Your name"
           aria-invalid={errors.name ? true : undefined}
           aria-describedby={errors.name ? "signup-name-error" : undefined}
+          className={fieldClasses}
           {...form.register("name")}
         />
       </Field>
@@ -80,51 +135,40 @@ function SignupForm({ onBack, onSuccess, switchQuery }: Omit<AuthFormProps, "mod
           placeholder="you@example.com"
           aria-invalid={errors.email ? true : undefined}
           aria-describedby={errors.email ? "signup-email-error" : undefined}
+          className={fieldClasses}
           {...form.register("email")}
         />
       </Field>
-      <Field
+      <PasswordField
         id="signup-password"
         label="Password"
         error={errors.password?.message}
         hint="At least 8 characters with a letter and a number."
-      >
-        <Input
-          id="signup-password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Create a password"
-          aria-invalid={errors.password ? true : undefined}
-          aria-describedby={errors.password ? "signup-password-error" : "signup-password-hint"}
-          {...form.register("password")}
-        />
-      </Field>
+        autoComplete="new-password"
+        placeholder="Create a password"
+        register={form.register("password")}
+      />
       <Checkbox
         id="signup-terms"
         error={errors.acceptTerms?.message}
         label={
           <>
-            I agree to the <span className="font-semibold text-text-primary underline">Terms of Use</span>, acknowledge
-            the <span className="font-semibold text-text-primary underline">Privacy Policy</span>, and confirm I&apos;m at
-            least 18 years old.
+            I agree to the <span className="font-medium text-foreground">Terms of Use</span>, acknowledge the{" "}
+            <span className="font-medium text-foreground">Privacy Policy</span>, and confirm I&apos;m at least 18 years
+            old.
           </>
         }
         {...form.register("acceptTerms")}
       />
-      {errors.root ? (
-        <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[13px] text-danger">
-          {errors.root.message}
-        </p>
-      ) : null}
-      <Button type="submit" size="lg" className="w-full" loading={busy}>
+      <FormError message={errors.root?.message} />
+      <Button type="submit" size="lg" className="w-full rounded-none shadow-none" loading={busy}>
         Create account
       </Button>
-      <FormFooter onBack={onBack} switchHref={`/login${switchQuery}`} switchLabel="Already have an account?" switchCta="Log in" />
     </form>
   );
 }
 
-function LoginForm({ onBack, onSuccess, switchQuery }: Omit<AuthFormProps, "mode">) {
+function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const login = useLogin();
   const form = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "" } });
   const { errors, isSubmitting } = form.formState;
@@ -149,56 +193,22 @@ function LoginForm({ onBack, onSuccess, switchQuery }: Omit<AuthFormProps, "mode
           placeholder="you@example.com"
           aria-invalid={errors.email ? true : undefined}
           aria-describedby={errors.email ? "login-email-error" : undefined}
+          className={fieldClasses}
           {...form.register("email")}
         />
       </Field>
-      <Field id="login-password" label="Password" error={errors.password?.message}>
-        <Input
-          id="login-password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Your password"
-          aria-invalid={errors.password ? true : undefined}
-          aria-describedby={errors.password ? "login-password-error" : undefined}
-          {...form.register("password")}
-        />
-      </Field>
-      {errors.root ? (
-        <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-[13px] text-danger">
-          {errors.root.message}
-        </p>
-      ) : null}
-      <Button type="submit" size="lg" className="w-full" loading={busy}>
+      <PasswordField
+        id="login-password"
+        label="Password"
+        error={errors.password?.message}
+        autoComplete="current-password"
+        placeholder="Your password"
+        register={form.register("password")}
+      />
+      <FormError message={errors.root?.message} />
+      <Button type="submit" size="lg" className="w-full rounded-none shadow-none" loading={busy}>
         Log in
       </Button>
-      <FormFooter onBack={onBack} switchHref={`/signup${switchQuery}`} switchLabel="New to Higgsfield?" switchCta="Sign up" />
     </form>
-  );
-}
-
-function FormFooter({
-  onBack,
-  switchHref,
-  switchLabel,
-  switchCta,
-}: {
-  onBack: () => void;
-  switchHref: string;
-  switchLabel: string;
-  switchCta: string;
-}) {
-  return (
-    <div className="flex items-center justify-between text-[13px] text-text-secondary">
-      <button type="button" onClick={onBack} className="inline-flex items-center gap-1 hover:text-text-primary">
-        <ArrowLeft className="size-3.5" aria-hidden />
-        Other options
-      </button>
-      <span>
-        {switchLabel}{" "}
-        <Link href={switchHref} className="font-semibold text-accent hover:underline">
-          {switchCta}
-        </Link>
-      </span>
-    </div>
   );
 }

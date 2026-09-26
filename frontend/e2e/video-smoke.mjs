@@ -6,7 +6,6 @@ const [shots, email, password] = process.argv.slice(2);
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 await page.goto(`${base}/login?next=%2Fgenerate%2Fvideo`);
-await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#login-email", email);
 await page.fill("#login-password", password);
 await page.getByRole("button", { name: "Log in" }).click();

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Archivo, Instrument_Serif, Inter } from "next/font/google";
 
 import { AppProviders } from "@/components/providers";
-import { TopNav } from "@/components/layout/top-nav";
 import { siteConfig } from "@/lib/config/site";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
@@ -42,10 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="flex min-h-screen flex-col">
-        <AppProviders>
-          <TopNav />
-          <main className="flex-1">{children}</main>
-        </AppProviders>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

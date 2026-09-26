@@ -116,7 +116,6 @@ check("/edit/image is auth-gated", true);
 await page.waitForLoadState("networkidle");
 await page.locator('main a[href^="/signup"], form a[href^="/signup"]').first().click();
 await page.waitForURL(/\/signup/);
-await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#signup-name", "Nav Tester");
 await page.fill("#signup-email", email);
 await page.fill("#signup-password", "passw0rd1");

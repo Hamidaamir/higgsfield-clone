@@ -17,9 +17,51 @@ page.on("response", (r) => r.status() >= 400 && console.log("HTTP", r.status(), 
 
 // Restart the uvicorn server to pick up the errors.py change is the caller's job; here we just drive the UI.
 await page.goto(`${base}/signup`, { waitUntil: "networkidle" });
-await page.screenshot({ path: `${shots}/01-signup-methods.png` });
-await page.getByRole("button", { name: /Continue with Email/ }).click();
-await page.screenshot({ path: `${shots}/02-signup-form.png` });
+check("auth page carries no product navigation", (await page.locator('nav[aria-label="Primary"]').count()) === 0);
+check("auth header keeps the wordmark home link", (await page.getByRole("link", { name: /Higgsfield home/ }).count()) === 1);
+check("auth header keeps the theme control", (await page.getByRole("button", { name: /Color theme/ }).count()) === 1);
+check("signup has a single meaningful h1", (await page.locator("h1").count()) === 1);
+check("email fields are visible without an extra step", await page.locator("#signup-email").isVisible());
+check(
+  "no fake credit or plan promises remain",
+  !/50 credits|business email|Scale and Enterprise/i.test(await page.locator("body").innerText()),
+);
+await page.screenshot({ path: `${shots}/01-signup.png` });
+
+// Password reveal is a client-side affordance over the same field.
+await page.fill("#signup-password", "passw0rd1");
+check("password is masked by default", (await page.locator("#signup-password").getAttribute("type")) === "password");
+await page.getByRole("button", { name: "Show password" }).click();
+check("password can be revealed", (await page.locator("#signup-password").getAttribute("type")) === "text");
+await page.getByRole("button", { name: "Hide password" }).click();
+check("password can be masked again", (await page.locator("#signup-password").getAttribute("type")) === "password");
+
+// The login <-> signup switch keeps the deep link.
+await page.goto(`${base}/signup?next=%2Fgenerate%2Fvideo`, { waitUntil: "networkidle" });
+check(
+  "signup switch link preserves next",
+  (await page.getByRole("link", { name: "Sign in" }).getAttribute("href")) === "/login?next=%2Fgenerate%2Fvideo",
+);
+await page.getByRole("link", { name: "Sign in" }).click();
+await page.waitForURL(/\/login\?next=%2Fgenerate%2Fvideo/);
+check(
+  "login switch link preserves next",
+  (await page.getByRole("link", { name: "Create an account" }).getAttribute("href")) === "/signup?next=%2Fgenerate%2Fvideo",
+);
+
+// Google callback error codes render a restrained banner; unknown codes are ignored.
+await page.goto(`${base}/login?error=google`, { waitUntil: "networkidle" });
+check("google error banner renders", (await page.getByRole("alert").first().innerText()).includes("didn't complete"));
+await page.goto(`${base}/login?error=google_unverified`, { waitUntil: "networkidle" });
+check("google unverified banner renders", (await page.getByRole("alert").first().innerText()).includes("isn't verified"));
+await page.goto(`${base}/login?error=not-a-real-code`, { waitUntil: "networkidle" });
+// Next always renders a visually-hidden route announcer with role=alert; ignore it.
+check(
+  "unknown error codes are ignored",
+  (await page.locator('[role="alert"]:not(#__next-route-announcer__)').count()) === 0,
+);
+
+await page.goto(`${base}/signup`, { waitUntil: "networkidle" });
 
 // Client validation: submit empty
 await page.getByRole("button", { name: "Create account" }).click();
@@ -60,7 +102,6 @@ check("anonymous protected route redirects to login", true);
 await page.screenshot({ path: `${shots}/05-login-methods.png` });
 
 // Wrong password
-await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#login-email", email);
 await page.fill("#login-password", "wrongpass1");
 await page.getByRole("button", { name: "Log in" }).click();
@@ -79,8 +120,6 @@ const mobile = await browser.newContext({ viewport: { width: 390, height: 844 } 
 const mp = await mobile.newPage();
 await mp.goto(`${base}/signup`);
 await mp.screenshot({ path: `${shots}/07-signup-mobile.png`, fullPage: false });
-await mp.getByRole("button", { name: /Continue with Email/ }).click();
-await mp.screenshot({ path: `${shots}/08-signup-form-mobile.png` });
 const overflow = await mp.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
 check("no horizontal overflow on mobile", !overflow);
 
@@ -93,7 +132,11 @@ check("providers endpoint offers Google sign-in", providers.google === true);
 await g.goto(`${gBase}/login?next=%2Fgenerate%2Fvideo`, { waitUntil: "networkidle" });
 const googleLink = g.getByRole("link", { name: "Continue with Google" });
 check("Google button starts the OAuth flow with next preserved", (await googleLink.getAttribute("href")) === "/api/auth/google/start?next=%2Fgenerate%2Fvideo");
-check("Apple and Microsoft are explicitly unavailable, not fake", (await g.getByRole("button", { name: /Continue with Apple/ }).isDisabled()) && (await g.getByRole("button", { name: /Continue with Microsoft/ }).isDisabled()));
+check(
+  "unimplemented providers are absent rather than shown as dead buttons",
+  (await g.getByRole("button", { name: /Continue with (Apple|Microsoft)/ }).count()) === 0 &&
+    (await g.getByRole("link", { name: /Continue with (Apple|Microsoft)/ }).count()) === 0,
+);
 
 // The rest of this section drives the local stand-in consent page, which only exists when the
 // backend has no real Google credentials. With real ones configured, following the link would
@@ -143,6 +186,18 @@ await g.waitForURL(/\/login\?error=google_unverified/);
 await g.waitForLoadState("networkidle");
 check("unverified Google email is refused with a clear message", (await g.getByRole("alert").first().innerText()).includes("isn't verified"));
 check("no session after a refused Google sign-in", (await (await g.request.get(`${gBase}/api/auth/me`)).json()).user === null);
+
+// Theme control on the auth page uses the shared store and persists.
+const themed = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+const tp = await themed.newPage();
+await tp.goto(`${base}/login`, { waitUntil: "networkidle" });
+await tp.getByRole("button", { name: /Color theme/ }).click();
+await tp.getByRole("button", { name: "Dark" }).click();
+await tp.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
+check("theme control works from the auth page", (await tp.evaluate(() => getComputedStyle(document.body).backgroundColor)) === "rgb(14, 13, 12)");
+await tp.reload({ waitUntil: "domcontentloaded" });
+check("theme preference persists across reload", (await tp.evaluate(() => document.documentElement.getAttribute("data-theme"))) === "dark");
+await themed.close();
 
 const unexpected = consoleErrors.filter((e) => !e.includes("401"));
 check("no unexpected console errors", unexpected.length === 0, unexpected.join(" | ").slice(0, 300));

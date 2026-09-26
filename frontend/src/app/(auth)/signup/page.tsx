@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AuthCard } from "@/components/auth/auth-card";
+import { AuthView } from "@/components/auth/auth-view";
 
 export const metadata: Metadata = { title: "Sign up" };
 
@@ -10,5 +10,5 @@ interface PageProps {
 
 export default async function SignupPage({ searchParams }: PageProps) {
   const { next } = await searchParams;
-  return <AuthCard mode="signup" nextPath={next} />;
+  return <AuthView mode="signup" nextPath={next} />;
 }
