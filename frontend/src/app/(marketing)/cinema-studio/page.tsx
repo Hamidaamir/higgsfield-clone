@@ -1,33 +1,27 @@
 import type { Metadata } from "next";
-import { Aperture, Clapperboard, Film, Lightbulb, Palette, Users } from "lucide-react";
+import Link from "next/link";
 
-import { ProductPage } from "@/components/discovery/product-page";
 import { ShotComposer } from "@/features/studios/shot-composer";
 
 export const metadata: Metadata = { title: "Cinema Studio" };
 
 export default function CinemaStudioPage() {
   return (
-    <ProductPage
-      eyebrow="Studio"
-      title="Cinema Studio 4.0"
-      description="Create cinematic scenes effortlessly. Camera, lens, movement, lighting and color — composed into a director prompt and shot with LTX Video."
-      status="available"
-      primary={{ label: "Compose a shot", href: "#composer" }}
-      secondary={{ label: "Create Video", href: "/generate/video" }}
-      seed="cinema-studio"
-      features={[
-        { icon: Aperture, title: "Camera & lens", text: "Wide, standard, telephoto or anamorphic — each lens changes the look of the shot." },
-        { icon: Clapperboard, title: "Movement", text: "Dolly, orbit, handheld and crane presets written the way a DP would brief them." },
-        { icon: Lightbulb, title: "Lighting", text: "Golden hour, neon, noir, overcast and studio setups." },
-        { icon: Palette, title: "Color grade", text: "Teal & orange, 35mm film, black & white or pastel." },
-        { icon: Film, title: "Real generation", text: "Shots render through the same free LTX Video workflow and are saved to History." },
-        { icon: Users, title: "Reusable elements", text: "Characters, locations and props as reusable elements are on the roadmap — preview only." },
-      ]}
-    >
-      <div id="composer">
-        <ShotComposer />
-      </div>
-    </ProductPage>
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-8">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border-subtle py-5">
+        <div>
+          <h1 className="editorial-label">Cinema Studio</h1>
+          <p className="mt-1 text-[13px] text-foreground-muted">Build a shot before you generate it.</p>
+        </div>
+        <Link href="/generate/video" className="text-[13px] text-foreground-muted transition-colors hover:text-accent-text">
+          Video Studio
+        </Link>
+      </header>
+      <p className="max-w-2xl pt-6 text-[15px] leading-relaxed text-foreground-muted">
+        A director’s vocabulary — lens, movement, light and grade — composed into one
+        instruction. Cinema Studio writes the shot; Video Studio generates it.
+      </p>
+      <ShotComposer />
+    </div>
   );
 }

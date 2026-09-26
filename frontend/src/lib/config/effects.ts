@@ -1,5 +1,7 @@
 /** Effects library: one-click prompt presets that open the video generator pre-filled. */
 
+import { composerHref } from "@/lib/generation-links";
+
 export type EffectCategory = "Camera" | "VFX" | "Viral" | "Action" | "Style";
 
 export interface Effect {
@@ -33,8 +35,5 @@ export const EFFECTS: Effect[] = [
   { slug: "claymation", name: "Claymation", category: "Style", description: "Stop-motion clay look.", prompt: "stop-motion claymation style, handmade textures, playful", seed: "fx-clay" },
 ];
 
-export const effectHref = (effect: Effect): string => {
-  const params = new URLSearchParams({ prompt: effect.prompt, model: "ltx-video" });
-  if (effect.aspect) params.set("aspect", effect.aspect);
-  return `/generate/video?${params}`;
-};
+export const effectHref = (effect: Effect): string =>
+  composerHref({ type: "video", prompt: effect.prompt, model: "ltx-video", aspect: effect.aspect });

@@ -47,7 +47,8 @@ check("explore plays the real LTX clip shipped with the app", (await page.locato
 
 await page.goto(`${base}/effects`);
 check("effects page reachable from the shell", (await h1()).toLowerCase().includes("effects"));
-await page.getByRole("tab", { name: "Camera" }).click();
+// The effects filters are pressable buttons in a labelled group, not tab panels.
+await page.getByRole("group", { name: "Effect category" }).getByRole("button", { name: "Camera", exact: true }).click();
 const effectCards = page.locator('section[aria-label="Effects library"] a[href^="/generate/video"]');
 const effectCount = await effectCards.count();
 check("effects filter narrows the grid", effectCount > 0 && effectCount < 15, `${effectCount} camera effects`);

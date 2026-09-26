@@ -1,26 +1,24 @@
 import type { Metadata } from "next";
-import { Bot, Cpu, Megaphone, Workflow } from "lucide-react";
 
-import { ProductPage } from "@/components/discovery/product-page";
+import { ConceptPage } from "@/components/discovery/concept-page";
 
 export const metadata: Metadata = { title: "Supercomputer" };
 
 export default function SupercomputerPage() {
   return (
-    <ProductPage
-      eyebrow="Agent"
+    <ConceptPage
+      eyebrow="Concept / Agent"
       title="Supercomputer"
-      description="One superagent for your entire creative stack — build, generate, market and automate from a single conversation."
-      status="preview"
-      statusNote="The agent surface is representative. Its building blocks — image, video and speech generation — are real and one click away."
+      description="One agent across the whole creative stack: describe an outcome and let it plan the shots, write the copy and produce the assets from a single conversation."
+      note="Preview only. There is no agent, no conversation and no automation here, and no compute allocation, queue or cluster behind it. The building blocks it would call are real: image, video and speech generation each work today."
+      seed="supercomputer"
       primary={{ label: "Generate an image", href: "/generate/image" }}
       secondary={{ label: "Text to speech", href: "/generate/audio" }}
-      seed="supercomputer"
-      features={[
-        { icon: Bot, title: "Chat-driven", text: "Describe the outcome; the agent plans the shots, copy and assets." },
-        { icon: Workflow, title: "Skills & connectors", text: "Generation, editing and publishing skills chained automatically." },
-        { icon: Megaphone, title: "Marketing hooks", text: "Analyzes hooks and formats for each channel." },
-        { icon: Cpu, title: "Runs on the same engine", text: "Every action maps to a generation you can see in History." },
+      points={[
+        { title: "Chat-driven", text: "Describe the outcome rather than operating each tool by hand." },
+        { title: "Chained skills", text: "Generation, editing and delivery steps run in sequence." },
+        { title: "Channel formats", text: "The same idea reshaped for each place it has to land." },
+        { title: "One engine", text: "Every action would map to an ordinary generation in your archive." },
       ]}
     />
   );

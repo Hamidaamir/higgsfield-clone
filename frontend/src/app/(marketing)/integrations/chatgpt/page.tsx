@@ -1,27 +1,24 @@
 import type { Metadata } from "next";
-import { MessageSquare, Sparkles, Video, Zap } from "lucide-react";
 
-import { ProductPage } from "@/components/discovery/product-page";
+import { ConceptPage } from "@/components/discovery/concept-page";
 
-export const metadata: Metadata = { title: "ChatGPT Plugin" };
+export const metadata: Metadata = { title: "ChatGPT plugin" };
 
 export default function ChatGptPluginPage() {
   return (
-    <ProductPage
-      eyebrow="New"
-      badge="New"
-      title="ChatGPT Plugin"
-      description="Viral video presets and motion design straight from a chat, with free generations."
-      status="preview"
-      statusNote="The plugin itself is not published in this build. The Effects library gives you the same presets with one click."
-      primary={{ label: "Browse effects", href: "/effects" }}
-      secondary={{ label: "Higgsfield MCP", href: "/integrations/mcp" }}
+    <ConceptPage
+      eyebrow="Concept / Integration"
+      title="ChatGPT plugin"
+      description="Reach the studio from a chat: describe the clip you want, let the assistant pick the preset, and get the generation back in the conversation."
+      note="Preview only. No plugin is published, nothing can be connected or installed, and there is no API key, workspace or sync state behind this page. The Effects library offers the same presets today, one click each."
       seed="chatgpt-plugin"
-      features={[
-        { icon: MessageSquare, title: "Chat to create", text: "Describe the clip; the plugin picks the preset and generates." },
-        { icon: Video, title: "Viral presets", text: "Crash zoom, eyes-in, flip phone and more." },
-        { icon: Sparkles, title: "Motion design", text: "After Effects-style motion graphics from a sentence." },
-        { icon: Zap, title: "Free generations", text: "Included free generations for new users." },
+      primary={{ label: "Browse Effects", href: "/effects" }}
+      secondary={{ label: "MCP concept", href: "/integrations/mcp" }}
+      points={[
+        { title: "Chat to create", text: "Describe the clip; the assistant chooses the preset and runs it." },
+        { title: "Preset library", text: "The same camera, VFX and viral presets the Effects page lists." },
+        { title: "Motion design", text: "Motion-graphics direction written as a sentence." },
+        { title: "Back in the thread", text: "Results would return to the conversation that asked for them." },
       ]}
     />
   );

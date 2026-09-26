@@ -1,26 +1,24 @@
 import type { Metadata } from "next";
-import { Building2, Lock, ShieldCheck, Users } from "lucide-react";
 
-import { ProductPage } from "@/components/discovery/product-page";
+import { ConceptPage } from "@/components/discovery/concept-page";
 
 export const metadata: Metadata = { title: "Enterprise" };
 
 export default function EnterprisePage() {
   return (
-    <ProductPage
-      eyebrow="Enterprise"
-      title="Higgsfield for teams"
-      description="SSO, shared workspaces, usage controls and volume pricing for studios and brands."
-      status="preview"
-      statusNote="Enterprise administration is out of scope for this build. The generation engine is the same one you can try for free today."
-      primary={{ label: "Try it free", href: "/signup" }}
-      secondary={{ label: "See pricing", href: "/pricing" }}
+    <ConceptPage
+      eyebrow="Concept / Teams"
+      title="For teams"
+      description="What this studio would need to run inside an organisation: single sign-on, shared workspaces, usage controls and pricing that fits a team rather than a person."
+      note="Preview only. There is no organisation, workspace, role, audit log or team billing in this build — accounts are individual. The generation engine described here is the same one any account can use for free today."
       seed="enterprise"
-      features={[
-        { icon: Lock, title: "SSO", text: "SAML and OIDC sign-in for your whole organization." },
-        { icon: Users, title: "Shared workspaces", text: "Projects, assets and history shared across the team." },
-        { icon: ShieldCheck, title: "Governance", text: "Usage limits, audit logs and content controls." },
-        { icon: Building2, title: "Volume pricing", text: "Committed-use discounts and dedicated support." },
+      primary={{ label: "Create a free account", href: "/signup" }}
+      secondary={{ label: "See plans", href: "/pricing" }}
+      points={[
+        { title: "Single sign-on", text: "SAML and OIDC sign-in for a whole organisation." },
+        { title: "Shared workspaces", text: "Projects, assets and archives visible across a team." },
+        { title: "Governance", text: "Usage limits, audit trails and content controls." },
+        { title: "Team pricing", text: "Committed-use terms instead of per-person plans." },
       ]}
     />
   );
