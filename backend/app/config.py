@@ -1,8 +1,9 @@
+import json
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import Field, SecretStr, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 APP_VERSION = "0.1.0"
 
@@ -15,7 +16,11 @@ class Settings(BaseSettings):
     app_env: Literal["development", "test", "production"] = "development"
     database_url: str | None = None
     session_secret: SecretStr = SecretStr("dev-only-secret-change-me")
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    # NoDecode turns off pydantic-settings' JSON decoding so the validator below can accept
+    # either a JSON array or the comma-separated form that hosting dashboards make easy.
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:3000"]
+    )
     # Browser-facing origin of the Next app. OAuth redirect URIs and post-login redirects are
     # built from it, so it must be the address users actually load (Vercel URL in production).
     public_app_url: str = "http://localhost:3000"
@@ -46,6 +51,27 @@ class Settings(BaseSettings):
 
     # Hugging Face token (free account) raises the ZeroGPU quota used for video generation.
     hf_token: SecretStr | None = None
+
+    # Root folder for uploaded media. Left unset it stays environment-scoped, so an existing
+    # deployment's assets keep their paths; production sets it explicitly (e.g. forma/production).
+    cloudinary_root_folder: str | None = None
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _parse_cors_origins(cls, value: object) -> object:
+        """Accept a JSON array or a comma-separated string; blank entries are dropped."""
+        if not isinstance(value, str):
+            return value
+        text = value.strip()
+        if text.startswith("["):
+            return json.loads(text)
+        return [origin.strip() for origin in text.split(",") if origin.strip()]
+
+    @property
+    def cloudinary_root(self) -> str:
+        """Where media is uploaded. Never derived from the product name, so renaming the
+        product cannot silently orphan assets already stored under the old path."""
+        return self.cloudinary_root_folder or f"higgsfield-clone/{self.app_env}"
 
     @property
     def is_production(self) -> bool:
