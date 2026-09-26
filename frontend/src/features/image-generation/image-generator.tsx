@@ -30,9 +30,16 @@ interface ImageGeneratorProps {
   initialPrompt?: string;
   initialAspectRatio?: string;
   initialBatchSize?: number;
+  initialNegativePrompt?: string;
 }
 
-export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRatio, initialBatchSize }: ImageGeneratorProps) {
+export function ImageGenerator({
+  initialModelId,
+  initialPrompt,
+  initialAspectRatio,
+  initialBatchSize,
+  initialNegativePrompt,
+}: ImageGeneratorProps) {
   const modelsQuery = useModels("image");
   const listQuery = useGenerationList(LIST_PARAMS);
   const create = useCreateImageGeneration(LIST_PARAMS);
@@ -42,8 +49,10 @@ export function ImageGenerator({ initialModelId, initialPrompt, initialAspectRat
   const [prompt, setPrompt] = useState(() => (initialPrompt ?? "").slice(0, 2000));
   const [modelId, setModelId] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState(initialAspectRatio ?? "1:1");
-  const [batchSize, setBatchSize] = useState(() => Math.min(4, Math.max(1, initialBatchSize ?? 1)));
-  const [negativePrompt, setNegativePrompt] = useState("");
+  // The floor is all that is needed here: the ceiling is the model's own `max_batch`,
+  // applied by `effectiveBatchSize` below so the registry stays the only authority.
+  const [batchSize, setBatchSize] = useState(() => Math.max(1, initialBatchSize ?? 1));
+  const [negativePrompt, setNegativePrompt] = useState(initialNegativePrompt ?? "");
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<{ generation: Generation; assetIndex: number } | null>(null);
   const detailLive = detail ? (listQuery.data?.items.find((g) => g.id === detail.generation.id) ?? detail.generation) : null;

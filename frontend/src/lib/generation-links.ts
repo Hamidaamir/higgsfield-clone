@@ -7,8 +7,9 @@ const GENERATOR_ROUTES: Record<Generation["type"], string> = {
 };
 
 /**
- * Deep link back into the matching generator with the prompt and the settings
- * the current model registry still supports. Nothing provider-specific goes in the URL.
+ * Deep link back into the matching generator with the prompt and the settings the current
+ * model registry still supports. Only known generator fields are serialised — never a blob
+ * of settings — and each one is dropped unless the target model can actually honour it.
  */
 export function reuseHref(generation: Generation, models: ModelSpec[] | undefined): string {
   const params = new URLSearchParams({ prompt: generation.prompt });
@@ -25,6 +26,12 @@ export function reuseHref(generation: Generation, models: ModelSpec[] | undefine
     if (voice && model.voices.some((v) => v.id === voice)) params.set("voice", voice);
     const language = generation.settings.language;
     if (language && model.languages.some((l) => l.code === language)) params.set("language", language);
+    // Optional free text is carried too, so History reuse restores the same settings as
+    // in-studio reuse. URLSearchParams encodes it, so &, = and quotes survive the round trip.
+    const negative = generation.settings.negative_prompt;
+    if (negative && model.supports_negative_prompt) params.set("negative", negative);
+    const style = generation.settings.style_prompt;
+    if (style && model.supports_style_prompt) params.set("style", style);
   }
   return `${GENERATOR_ROUTES[generation.type]}?${params}`;
 }

@@ -29,9 +29,16 @@ interface VideoGeneratorProps {
   initialPrompt?: string;
   initialAspectRatio?: string;
   initialDuration?: number;
+  initialNegativePrompt?: string;
 }
 
-export function VideoGenerator({ initialModelId, initialPrompt, initialAspectRatio, initialDuration }: VideoGeneratorProps) {
+export function VideoGenerator({
+  initialModelId,
+  initialPrompt,
+  initialAspectRatio,
+  initialDuration,
+  initialNegativePrompt,
+}: VideoGeneratorProps) {
   const modelsQuery = useModels("video");
   const listQuery = useGenerationList(LIST_PARAMS);
   const create = useCreateVideoGeneration(LIST_PARAMS);
@@ -43,7 +50,7 @@ export function VideoGenerator({ initialModelId, initialPrompt, initialAspectRat
   const [modelId, setModelId] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState(initialAspectRatio ?? "16:9");
   const [duration, setDuration] = useState<number | null>(initialDuration ?? null);
-  const [negativePrompt, setNegativePrompt] = useState("");
+  const [negativePrompt, setNegativePrompt] = useState(initialNegativePrompt ?? "");
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<Generation | null>(null);
   const [submissions, setSubmissions] = useState(0);

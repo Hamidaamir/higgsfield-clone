@@ -30,14 +30,14 @@ await page.getByRole("button", { name: "Create account" }).click();
 await page.waitForURL(/\/history$/);
 
 // 2. empty states
-await page.waitForSelector("text=Nothing generated yet");
-check("empty state (all) with CTA", (await page.getByRole("link", { name: "Create your first image" }).count()) === 1);
+await page.waitForSelector("text=Nothing here yet.");
+check("empty state (all) with CTA", (await page.getByRole("link", { name: "Image Studio" }).count()) === 1);
 await page.getByRole("tab", { name: "Videos" }).click();
-await page.waitForSelector("text=No videos yet");
+await page.waitForSelector("text=No video generations yet.");
 await page.getByRole("tab", { name: "Audio" }).click();
-await page.waitForSelector("text=No audio yet");
+await page.waitForSelector("text=No audio generations yet.");
 await page.getByRole("tab", { name: "Images" }).click();
-await page.waitForSelector("text=No images yet");
+await page.waitForSelector("text=No image generations yet.");
 check("video/audio/images empty states", true);
 await page.screenshot({ path: `${shots}/20-history-empty.png` });
 
@@ -73,10 +73,10 @@ await page.getByRole("tab", { name: "Images" }).click();
 await page.waitForURL(/type=image/);
 await page.waitForSelector("article");
 check("images filter keeps image records", (await page.locator("article").count()) >= 24);
-await page.fill('input[aria-label="Search history"]', "zebra-7");
+await page.fill('input[aria-label="Search prompts and models"]', "zebra-7");
 await page.waitForFunction(() => document.querySelectorAll("article").length === 1);
 check("search narrows to 1 tile", true);
-await page.fill('input[aria-label="Search history"]', "");
+await page.fill('input[aria-label="Search prompts and models"]', "");
 await page.waitForFunction(() => document.querySelectorAll("article").length >= 24);
 
 // 6. detail dialog + reuse prompt
@@ -133,4 +133,5 @@ await mp.screenshot({ path: `${shots}/25-history-mobile-detail.png` });
 
 check("no unexpected console errors", consoleErrors.length === 0, consoleErrors.join(" | ").slice(0, 300));
 console.log(results.join("\n"));
+if (results.some((r) => r.startsWith("FAIL"))) process.exitCode = 1;
 await browser.close();

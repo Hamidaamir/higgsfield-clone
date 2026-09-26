@@ -130,11 +130,18 @@ await page.getByRole("button", { name: "Make it snow" }).click();
 check("quick-edit chip fills the instruction", (await page.inputValue("#edit-instruction")) === "Make it snow");
 await page.setInputFiles('input[aria-label="Upload reference image"]', pngPath);
 await page.waitForSelector('form[aria-label="Image editor"] img');
+// The submit unlocks only once the upload resolves into an asset id.
+await page.waitForFunction(
+  () => !document.querySelector('form[aria-label="Image editor"]')?.innerText.includes("Uploading"),
+  null,
+  { timeout: 25000 },
+);
 await page.locator('form[aria-label="Image editor"] button[type="submit"]').click();
-const editRow = page.locator('article[aria-label^="Edit:"]').first();
-check("submitting an edit shows a before → after row immediately", await visible(editRow));
-check("the row shows the reference image as Before", await visible(editRow.locator('img[alt="Reference image"]')));
-await editRow.locator('img[alt^="Make it snow"]').waitFor({ state: "visible", timeout: 20000 });
+const editRow = page.locator('section[aria-label="Edits"] article[aria-label*="Make it snow"]').first();
+check("submitting an edit shows a before → after pair immediately", await visible(editRow));
+check("the pair shows the reference image as Before", await visible(editRow.locator('img[alt^="Before the edit"]')));
+check("both halves of the diptych are labelled", (await editRow.locator("figcaption").allInnerTexts()).join("|").toLowerCase().includes("before|after"));
+await editRow.locator('img[alt^="After the edit"]').waitFor({ state: "visible", timeout: 25000 });
 check("the edit completes into the After slot", true);
 await page.screenshot({ path: `${shots}/61-edit-image.png` });
 

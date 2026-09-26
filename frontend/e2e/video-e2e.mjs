@@ -150,7 +150,15 @@ await page.waitForSelector("article");
 const tiles = await page.locator("article").count();
 check("history video filter lists the clips", tiles === 3, `count=${tiles}`);
 check("failed clip renders safely in history", (await page.locator("article", { hasText: "Generation failed" }).count()) === 1);
-check("no broken media in history", (await page.locator("article video").count()) === 2);
+const archiveClips = await (await page.request.get(`${base}/api/generations?type=video&limit=24`)).json();
+const completedAssets = archiveClips.items.flatMap((g) => g.assets);
+const posters = completedAssets.filter((asset) => asset.thumbnail_url).length;
+check("archive faithfully represents posters or their absence without eager video players",
+  completedAssets.length === 2 &&
+  (await page.locator("article img").count()) === posters &&
+  (await page.getByText("Poster unavailable · Open to play", { exact: true }).count()) === 2 - posters &&
+  (await page.locator('article a[aria-label^="Open original output"]').count()) === 2 &&
+  (await page.locator("article video").count()) === 0);
 await page.screenshot({ path: `${shots}/36-history-video.png` });
 await page.locator("article").first().locator("button").first().click();
 await page.waitForSelector('[role="dialog"] video');
@@ -177,4 +185,5 @@ await mp.screenshot({ path: `${shots}/37-video-mobile.png` });
 
 check("no unexpected console errors", consoleErrors.length === 0, consoleErrors.join(" | ").slice(0, 300));
 console.log(results.join("\n"));
+if (results.some((r) => r.startsWith("FAIL"))) process.exitCode = 1;
 await browser.close();

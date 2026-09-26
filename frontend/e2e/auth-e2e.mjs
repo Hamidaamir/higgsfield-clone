@@ -124,8 +124,10 @@ const overflow = await mp.evaluate(() => document.documentElement.scrollWidth > 
 check("no horizontal overflow on mobile", !overflow);
 
 // --- Google sign-in (FakeGoogleOAuth in USE_FAKE_PROVIDERS mode: the round trip stays local) ------
-// The OAuth callback redirects to PUBLIC_APP_URL (http://localhost:3000), so this part runs there.
-const gBase = "http://localhost:3000";
+// The OAuth callback redirects to PUBLIC_APP_URL (http://localhost:3000), so the fake round
+// trip below only completes when the app is served there; E2E_BASE overrides the origin for
+// the checks that do not leave the app.
+const gBase = process.env.E2E_BASE ?? "http://localhost:3000";
 const g = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
 const providers = await (await g.request.get(`${gBase}/api/auth/providers`)).json();
 check("providers endpoint offers Google sign-in", providers.google === true);
