@@ -28,9 +28,18 @@ interface AudioGeneratorProps {
   initialScript?: string;
   initialVoice?: string;
   initialLanguage?: string;
+  initialBatchSize?: number;
+  initialStylePrompt?: string;
 }
 
-export function AudioGenerator({ initialModelId, initialScript, initialVoice, initialLanguage }: AudioGeneratorProps) {
+export function AudioGenerator({
+  initialModelId,
+  initialScript,
+  initialVoice,
+  initialLanguage,
+  initialBatchSize,
+  initialStylePrompt,
+}: AudioGeneratorProps) {
   const modelsQuery = useModels("audio");
   const listQuery = useGenerationList(LIST_PARAMS);
   const create = useCreateAudioGeneration(LIST_PARAMS);
@@ -41,8 +50,10 @@ export function AudioGenerator({ initialModelId, initialScript, initialVoice, in
   const [modelId, setModelId] = useState<string | null>(null);
   const [voice, setVoice] = useState<string | null>(initialVoice ?? null);
   const [language, setLanguage] = useState<string | null>(initialLanguage ?? null);
-  const [stylePrompt, setStylePrompt] = useState("");
-  const [batchSize, setBatchSize] = useState(1);
+  const [stylePrompt, setStylePrompt] = useState(initialStylePrompt ?? "");
+  // Only the floor is applied here; `effectiveBatchSize` clamps to the selected model's
+  // `max_batch`, so the registry decides the ceiling and an out-of-range URL cannot be sent.
+  const [batchSize, setBatchSize] = useState(() => Math.max(1, initialBatchSize ?? 1));
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<Generation | null>(null);
   const [submissions, setSubmissions] = useState(0);

@@ -72,7 +72,7 @@ function DetailBody({
     <>
       <div
         className={cn(
-          "relative flex items-center justify-center overflow-hidden bg-black",
+          "relative flex items-center justify-center overflow-hidden bg-black text-white",
           generation.type === "audio" ? "min-h-[240px] md:min-h-[320px]" : "min-h-[40vh] md:min-h-[70vh]",
         )}
       >
@@ -86,7 +86,7 @@ function DetailBody({
               <span className="size-8 animate-spin rounded-full border-2 border-accent/30 border-t-accent" aria-hidden />
             )}
             <p className="text-sm font-semibold">{failed ? "Generation failed" : "Still generating…"}</p>
-            <p className="max-w-sm text-sm text-text-secondary">
+            <p className="max-w-sm text-sm text-white/70">
               {failed ? generation.error_message : "This result will appear here as soon as it is ready."}
             </p>
           </div>

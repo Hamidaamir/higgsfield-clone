@@ -73,7 +73,9 @@ export function VideoRail({
   error,
   disabledReason,
 }: VideoRailProps) {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  // Opens on mount when a negative prompt arrived with the URL, so a restored value is
+  // never hidden behind a collapsed panel.
+  const [advancedOpen, setAdvancedOpen] = useState(() => Boolean(negativePrompt));
   const advancedId = useId();
   const trimmed = prompt.trim();
   const tooLong = prompt.length > PROMPT_MAX_LENGTH;

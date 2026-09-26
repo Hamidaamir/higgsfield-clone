@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { HistoryView, type HistoryFilter } from "@/features/history/history-view";
 
-export const metadata: Metadata = { title: "History" };
+export const metadata: Metadata = { title: "Archive" };
 
 const FILTERS: HistoryFilter[] = ["all", "image", "video", "audio"];
 

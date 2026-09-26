@@ -2,12 +2,11 @@
 
 import { AudioLines, Image as ImageIcon, Search, Sparkles, Video, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { GenerationDetailDialog } from "@/components/generation/generation-detail-dialog";
-import { GenerationTile } from "@/components/history/generation-tile";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +16,8 @@ import type { ListGenerationsParams } from "@/lib/api/generations";
 import { dayLabel } from "@/lib/format";
 import { generatorHref, reuseHref } from "@/lib/generation-links";
 import type { Generation, GenerationType } from "@/types/generation";
+
+import { ArchiveGeneration } from "./archive-generation";
 
 export type HistoryFilter = "all" | GenerationType;
 
@@ -32,28 +33,28 @@ const PAGE_SIZE = 24;
 const emptyCopy: Record<HistoryFilter, { icon: typeof ImageIcon; title: string; description: string; cta: string; href: string }> = {
   all: {
     icon: Sparkles,
-    title: "Nothing generated yet",
-    description: "Everything you create — images, videos and speech — is saved here automatically.",
-    cta: "Create your first image",
+    title: "Nothing here yet.",
+    description: "Your images, videos, audio and image edits are saved here automatically.",
+    cta: "Image Studio",
     href: "/generate/image",
   },
   image: {
     icon: ImageIcon,
-    title: "No images yet",
+    title: "No image generations yet.",
     description: "Describe a scene in the image generator and your results will show up here.",
     cta: "Generate an image",
     href: "/generate/image",
   },
   video: {
     icon: Video,
-    title: "No videos yet",
+    title: "No video generations yet.",
     description: "Video generation lands in the Video workspace. Clips you make will be kept here.",
     cta: "Open Video",
     href: "/generate/video",
   },
   audio: {
     icon: AudioLines,
-    title: "No audio yet",
+    title: "No audio generations yet.",
     description: "Text-to-speech results from the Audio workspace will be collected here.",
     cta: "Open Audio",
     href: "/generate/audio",
@@ -62,10 +63,17 @@ const emptyCopy: Record<HistoryFilter, { icon: typeof ImageIcon; title: string; 
 
 export function HistoryView({ initialFilter = "all" }: { initialFilter?: HistoryFilter }) {
   const router = useRouter();
-  const [filter, setFilter] = useState<HistoryFilter>(initialFilter);
+  const searchParams = useSearchParams();
+  const urlType = searchParams.get("type");
+  const filter: HistoryFilter = FILTERS.some((f) => f.value === urlType) ? urlType as HistoryFilter : initialFilter;
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [detail, setDetail] = useState<Generation | null>(null);
+  const [assetIndex, setAssetIndex] = useState(0);
+  const openDetail = (generation: Generation, index: number) => {
+    setAssetIndex(index);
+    setDetail(generation);
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebounced(search.trim()), 300);
@@ -97,7 +105,6 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
   }, [items]);
 
   const onFilterChange = (value: string) => {
-    setFilter(value as HistoryFilter);
     router.replace(value === "all" ? "/history" : `/history?type=${value}`, { scroll: false });
   };
 
@@ -120,32 +127,34 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
   const empty = emptyCopy[filter];
 
   return (
-    <section className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <section className="mx-auto max-w-[1280px] px-5 py-8 sm:px-8 sm:py-12 lg:px-12">
+      <header>
         <div>
-          <h1 className="display-heading text-3xl sm:text-4xl">History</h1>
-          <p className="mt-1.5 text-sm text-text-secondary">Every generation you create, saved with its prompt and settings.</p>
+          <p className="editorial-label text-accent-text">03 / Your work</p>
+          <h1 className="editorial-display mt-3 text-4xl sm:text-5xl">Archive</h1>
+          <p className="mt-3 text-sm text-foreground-muted">Everything you’ve made, in one place.</p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label className="flex h-10 items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm text-text-secondary focus-within:border-accent">
+        <div className="mt-8 flex flex-col gap-5 border-y border-border-default py-4 md:flex-row md:items-center md:justify-between">
+          <label className="flex min-h-11 min-w-0 items-center gap-3 border-b border-border-default text-sm text-foreground-muted focus-within:border-accent md:w-96">
+            <span className="sr-only">Search prompts and models</span>
             <Search className="size-4 shrink-0" aria-hidden />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search prompts or models"
-              aria-label="Search history"
-              className="w-full min-w-0 bg-transparent text-text-primary outline-none placeholder:text-text-muted sm:w-52"
+              placeholder="Search prompts and models…"
+              aria-label="Search prompts and models"
+              className="w-full min-w-0 bg-transparent text-text-primary outline-none placeholder:text-foreground-muted"
             />
             {search ? (
-              <button type="button" onClick={() => setSearch("")} aria-label="Clear search" className="text-text-muted hover:text-text-primary">
+              <button type="button" onClick={() => setSearch("")} aria-label="Clear search" className="flex size-10 shrink-0 items-center justify-center text-foreground-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus">
                 <X className="size-3.5" />
               </button>
             ) : null}
           </label>
           <Tabs value={filter} onValueChange={onFilterChange}>
-            <TabsList aria-label="Filter by type">
+            <TabsList aria-label="Filter by type" className="h-auto flex-wrap justify-start gap-1 rounded-none border-0 bg-transparent p-0">
               {FILTERS.map((f) => (
-                <TabsTrigger key={f.value} value={f.value}>
+                <TabsTrigger key={f.value} value={f.value} className="min-h-10 rounded-none px-3 text-xs uppercase tracking-wider data-[state=active]:bg-accent-subtle data-[state=active]:text-accent-text data-[state=active]:shadow-none">
                   {f.label}
                 </TabsTrigger>
               ))}
@@ -154,17 +163,18 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
         </div>
       </header>
 
-      <div className="mt-6">
+      <div className="mt-8">
         {feed.isPending ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" aria-busy="true" aria-label="Loading history">
-            {Array.from({ length: 10 }, (_, i) => (
-              <div key={i} className="aspect-square rounded-2xl skeleton-shimmer" />
+          <div className="space-y-8" role="status" aria-busy="true" aria-label="Loading archive">
+            {Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="h-20 border-t border-border-subtle skeleton-shimmer" />
             ))}
           </div>
         ) : feed.isError ? (
           <EmptyState
+            className="rounded-none border-0 border-y border-solid border-border-subtle bg-transparent [&>span]:hidden [&>h2]:editorial-display [&>h2]:text-3xl"
             icon={Sparkles}
-            title="History could not be loaded"
+            title="Archive could not be loaded"
             description="The server may be starting up. Please try again in a moment."
             action={
               <Button variant="secondary" onClick={() => feed.refetch()}>
@@ -175,9 +185,10 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
         ) : items.length === 0 ? (
           debounced ? (
             <EmptyState
+              className="rounded-none border-0 border-y border-solid border-border-subtle bg-transparent [&>span]:hidden [&>h2]:editorial-display [&>h2]:text-3xl"
               icon={Search}
               title="No matches"
-              description={`Nothing in your history matches “${debounced}”.`}
+              description={`No results in your archive for “${debounced}”.`}
               action={
                 <Button variant="secondary" onClick={() => setSearch("")}>
                   Clear search
@@ -186,6 +197,7 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
             />
           ) : (
             <EmptyState
+              className="rounded-none border-0 border-y border-solid border-border-subtle bg-transparent [&>span]:hidden [&>h2]:editorial-display [&>h2]:text-3xl"
               icon={empty.icon}
               title={empty.title}
               description={empty.description}
@@ -197,11 +209,12 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
                   {filter === "all" ? (
                     <>
                       <Button asChild variant="secondary">
-                        <Link href="/generate/video">Make a video</Link>
+                        <Link href="/generate/video">Video Studio</Link>
                       </Button>
                       <Button asChild variant="secondary">
-                        <Link href="/generate/audio">Generate speech</Link>
+                        <Link href="/generate/audio">Audio Studio</Link>
                       </Button>
+                      <Button asChild variant="secondary"><Link href="/edit/image">Edit &amp; Enhance</Link></Button>
                     </>
                   ) : null}
                 </div>
@@ -211,21 +224,22 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
         ) : (
           <div className="space-y-8">
             {groups.map((group) => (
-              <div key={group.label}>
-                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-secondary">{group.label}</h2>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <section key={group.label} aria-label={group.label}>
+                <h2 className="editorial-label pb-4 pt-3 text-foreground-muted">{group.label}</h2>
+                <div>
                   {group.items.map((generation) => (
-                    <GenerationTile
+                    <ArchiveGeneration
                       key={generation.id}
                       generation={generation}
                       model={modelById(generation.model_id)}
-                      onOpen={setDetail}
+                      onOpen={openDetail}
+                      onReusePrompt={reuse}
                       onRetry={onRegenerate}
                       retrying={regenerate.isPending}
                     />
                   ))}
                 </div>
-              </div>
+              </section>
             ))}
             {feed.hasNextPage ? (
               <div className="flex justify-center">
@@ -244,6 +258,7 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
 
       <GenerationDetailDialog
         generation={detailLive}
+        initialAssetIndex={assetIndex}
         model={detailLive ? modelById(detailLive.model_id) : undefined}
         onClose={() => setDetail(null)}
         onReusePrompt={reuse}
