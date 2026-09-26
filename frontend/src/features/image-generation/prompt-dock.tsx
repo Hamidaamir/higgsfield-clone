@@ -1,20 +1,21 @@
 "use client";
 
-import { Plus, Sparkles } from "lucide-react";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 
 import { AspectRatioPicker } from "@/components/generator/aspect-ratio-picker";
 import { BatchStepper } from "@/components/generator/batch-stepper";
 import { ModelPicker } from "@/components/generator/model-picker";
 import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/tooltip";
-import { PROMPT_MAX_LENGTH } from "@/lib/schemas/generation";
+import { NEGATIVE_PROMPT_MAX_LENGTH, PROMPT_MAX_LENGTH } from "@/lib/schemas/generation";
 import { cn } from "@/lib/utils";
 import type { ModelSpec } from "@/types/generation";
 
 export interface PromptDockProps {
   prompt: string;
   onPromptChange: (value: string) => void;
+  negativePrompt: string;
+  onNegativePromptChange: (value: string) => void;
   models: ModelSpec[];
   model: ModelSpec | undefined;
   onModelChange: (model: ModelSpec) => void;
@@ -29,10 +30,16 @@ export interface PromptDockProps {
   disabledReason?: string | null;
 }
 
-/** Bottom-docked composer reproducing the reference image generator bar (212424.png). */
+/**
+ * Bottom-docked composer: a hairline editorial bar the width of the workspace. The prompt is
+ * the visual priority; model, aspect and batch sit on one restrained row beneath it, and
+ * Advanced reveals only controls the selected model genuinely supports.
+ */
 export function PromptDock({
   prompt,
   onPromptChange,
+  negativePrompt,
+  onNegativePromptChange,
   models,
   model,
   onModelChange,
@@ -46,12 +53,14 @@ export function PromptDock({
   disabledReason,
 }: PromptDockProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const advancedId = useId();
   const trimmed = prompt.trim();
   const tooLong = prompt.length > PROMPT_MAX_LENGTH;
   const canSubmit = Boolean(model) && trimmed.length > 0 && !tooLong && !submitting && !disabledReason;
-  const cost = (model?.credit_cost ?? 0) * batchSize;
+  const supportsNegative = model?.supports_negative_prompt ?? false;
 
-  // Auto-grow up to ~5 lines, like the reference single-line dock that expands as you type.
+  // Auto-grow up to ~5 lines, so the composer stays compact until the prompt needs room.
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -74,76 +83,101 @@ export function PromptDock({
           if (canSubmit) onGenerate();
         }}
         aria-label="Image generator"
-        className="pointer-events-auto mx-auto w-full max-w-[1120px] rounded-3xl border border-border bg-surface-elevated/95 p-2.5 shadow-menu backdrop-blur sm:p-3"
+        className="pointer-events-auto mx-auto w-full max-w-[1120px] border border-border-default bg-surface-raised/97 shadow-float backdrop-blur"
       >
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
-          <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-            <div className="flex items-start gap-2.5 px-1">
-              <Tooltip content="Reference images arrive with Edit Image">
-                <span
-                  aria-disabled="true"
-                  className="mt-0.5 flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-full border border-border bg-surface-muted text-text-muted"
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="sr-only">Add reference (coming with Edit Image)</span>
-                </span>
-              </Tooltip>
-              <label htmlFor="image-prompt" className="sr-only">
-                Prompt
-              </label>
-              <textarea
-                id="image-prompt"
-                ref={textareaRef}
-                value={prompt}
-                onChange={(e) => onPromptChange(e.target.value)}
-                onKeyDown={onKeyDown}
-                rows={1}
-                maxLength={PROMPT_MAX_LENGTH + 200}
-                placeholder="Describe the scene you imagine"
-                aria-invalid={tooLong || Boolean(error) || undefined}
-                aria-describedby={error || tooLong ? "image-prompt-error" : undefined}
-                className="min-h-9 w-full resize-none bg-transparent py-1.5 text-[15px] leading-6 text-text-primary outline-none placeholder:text-text-muted scrollbar-thin"
-              />
-              {prompt.length > PROMPT_MAX_LENGTH - 200 ? (
-                <span className={cn("shrink-0 pt-2 text-[11px] tabular-nums", tooLong ? "text-danger" : "text-text-muted")}>
-                  {prompt.length}/{PROMPT_MAX_LENGTH}
-                </span>
-              ) : null}
-            </div>
+        <div className="flex items-start gap-3 px-3 pt-3 sm:px-4 sm:pt-4">
+          <label htmlFor="image-prompt" className="sr-only">
+            Prompt
+          </label>
+          <textarea
+            id="image-prompt"
+            ref={textareaRef}
+            value={prompt}
+            onChange={(e) => onPromptChange(e.target.value)}
+            onKeyDown={onKeyDown}
+            rows={1}
+            maxLength={PROMPT_MAX_LENGTH + 200}
+            placeholder="Describe the image you want to make"
+            aria-invalid={tooLong || Boolean(error) || undefined}
+            aria-describedby={error || tooLong || disabledReason ? "image-prompt-error" : undefined}
+            className="min-h-9 w-full resize-none bg-transparent py-1 text-[15px] leading-6 text-foreground outline-none placeholder:text-foreground-subtle scrollbar-thin"
+          />
+          {prompt.length > PROMPT_MAX_LENGTH - 200 ? (
+            <span className={cn("shrink-0 pt-1.5 text-[11px] tabular-nums", tooLong ? "text-danger" : "text-foreground-subtle")}>
+              {prompt.length}/{PROMPT_MAX_LENGTH}
+            </span>
+          ) : null}
+        </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto px-0.5 pb-0.5 scrollbar-none">
-              <ModelPicker models={models} value={model} onChange={onModelChange} disabled={submitting} />
-              <AspectRatioPicker
-                options={model?.aspect_ratios ?? ["1:1"]}
-                value={aspectRatio}
-                onChange={onAspectRatioChange}
-                disabled={submitting}
-              />
-              <BatchStepper value={batchSize} max={model?.max_batch ?? 1} onChange={onBatchSizeChange} disabled={submitting} />
-            </div>
+        {advancedOpen ? (
+          <div id={advancedId} className="border-t border-border-subtle px-3 py-3 sm:px-4">
+            {supportsNegative ? (
+              <>
+                <label htmlFor="image-negative-prompt" className="editorial-label">
+                  Negative prompt
+                </label>
+                <textarea
+                  id="image-negative-prompt"
+                  value={negativePrompt}
+                  onChange={(e) => onNegativePromptChange(e.target.value)}
+                  rows={2}
+                  maxLength={NEGATIVE_PROMPT_MAX_LENGTH}
+                  placeholder="What the image should avoid"
+                  className="mt-1.5 w-full resize-none border border-border-default bg-surface px-3 py-2 text-[13px] leading-5 text-foreground outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/25 placeholder:text-foreground-subtle"
+                />
+              </>
+            ) : (
+              <p className="text-[13px] text-foreground-muted">
+                {model?.name ?? "This model"} has no advanced options. SDXL Lightning supports a negative prompt.
+              </p>
+            )}
           </div>
+        ) : null}
 
-          <div className="flex shrink-0 items-end sm:items-stretch">
-            <Button
-              type="submit"
-              size="lg"
-              loading={submitting}
-              disabled={!canSubmit}
-              className="h-12 w-full gap-2 rounded-2xl px-5 text-base shadow-accent sm:h-auto sm:min-h-[84px] sm:w-auto sm:px-7"
-            >
-              Generate
-              {model ? (
-                <span className="inline-flex items-center gap-1 text-sm font-semibold opacity-80">
-                  <Sparkles className="size-3.5" aria-hidden />
-                  {cost}
-                </span>
-              ) : null}
-            </Button>
-          </div>
+        <div className="flex flex-wrap items-center gap-2 border-t border-border-subtle px-3 py-2.5 sm:px-4">
+          <ModelPicker models={models} value={model} onChange={onModelChange} disabled={submitting} variant="editorial" />
+          <AspectRatioPicker
+            options={model?.aspect_ratios ?? ["1:1"]}
+            value={aspectRatio}
+            onChange={onAspectRatioChange}
+            disabled={submitting}
+            variant="editorial"
+          />
+          <BatchStepper
+            value={batchSize}
+            max={model?.max_batch ?? 1}
+            onChange={onBatchSizeChange}
+            disabled={submitting}
+            variant="editorial"
+          />
+          <button
+            type="button"
+            onClick={() => setAdvancedOpen((open) => !open)}
+            aria-expanded={advancedOpen}
+            aria-controls={advancedOpen ? advancedId : undefined}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 px-2 text-[13px] text-foreground-muted transition-colors hover:text-foreground"
+          >
+            Advanced
+            <ChevronDown className={cn("size-3.5 transition-transform", advancedOpen && "rotate-180")} aria-hidden />
+          </button>
+
+          <Button
+            type="submit"
+            size="lg"
+            loading={submitting}
+            disabled={!canSubmit}
+            className="ml-auto h-10 rounded-none px-6 shadow-none"
+          >
+            Generate
+          </Button>
         </div>
 
         {error || tooLong || disabledReason ? (
-          <p id="image-prompt-error" role="alert" className="mt-2 px-2 text-[13px] text-danger">
+          <p
+            id="image-prompt-error"
+            role="alert"
+            className="border-t border-danger/30 bg-danger/5 px-3 py-2 text-[13px] text-danger sm:px-4"
+          >
             {tooLong ? `Prompts are limited to ${PROMPT_MAX_LENGTH} characters.` : (error ?? disabledReason)}
           </p>
         ) : null}

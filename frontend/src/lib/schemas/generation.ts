@@ -9,6 +9,9 @@ export const imagePromptSchema = z
   .max(PROMPT_MAX_LENGTH, `Prompts are limited to ${PROMPT_MAX_LENGTH} characters.`);
 
 export const SCRIPT_MAX_LENGTH = 2000;
+/** Mirrors NEGATIVE_PROMPT_MAX_LENGTH in the API schema. */
+export const NEGATIVE_PROMPT_MAX_LENGTH = 500;
+
 export const STYLE_PROMPT_MAX_LENGTH = 500;
 
 export const scriptSchema = z

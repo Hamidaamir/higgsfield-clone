@@ -3,7 +3,7 @@
 import { Check, Scan } from "lucide-react";
 import { useState } from "react";
 
-import { SettingChip } from "@/components/generator/setting-chip";
+import { SettingChip, type ControlVariant } from "@/components/generator/setting-chip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ratioToStyle } from "@/lib/media";
@@ -14,20 +14,31 @@ interface AspectRatioPickerProps {
   value: string;
   onChange: (ratio: string) => void;
   disabled?: boolean;
+  variant?: ControlVariant;
 }
 
 /** Aspect ratio chip; only the ratios the selected model actually supports are offered. */
-export function AspectRatioPicker({ options, value, onChange, disabled }: AspectRatioPickerProps) {
+export function AspectRatioPicker({ options, value, onChange, disabled, variant = "default" }: AspectRatioPickerProps) {
   const [open, setOpen] = useState(false);
   const locked = options.length <= 1;
 
   const chip = (
     <SettingChip
       aria-label="Aspect ratio"
-      icon={<Scan className="size-4" />}
-      label={value}
+      icon={variant === "editorial" ? undefined : <Scan className="size-4" />}
+      label={
+        variant === "editorial" ? (
+          <span className="flex items-baseline gap-2">
+            <span className="editorial-label">Aspect</span>
+            <span className="tabular-nums">{value}</span>
+          </span>
+        ) : (
+          value
+        )
+      }
       expandable={!locked}
       disabled={disabled || locked}
+      variant={variant}
     />
   );
 
