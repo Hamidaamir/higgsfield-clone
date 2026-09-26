@@ -11,15 +11,17 @@ interface BatchStepperProps {
   onChange: (value: number) => void;
   disabled?: boolean;
   variant?: ControlVariant;
+  /** What is being counted, for accessible names and the editorial caption. */
+  unit?: "images" | "takes";
 }
 
 /** "− 1/4 +" control from the reference dock. */
-export function BatchStepper({ value, max, onChange, disabled, variant = "default" }: BatchStepperProps) {
+export function BatchStepper({ value, max, onChange, disabled, variant = "default", unit = "images" }: BatchStepperProps) {
   const editorial = variant === "editorial";
   return (
     <div
       role="group"
-      aria-label="Number of images"
+      aria-label={`Number of ${unit}`}
       className={cn(
         "inline-flex h-9 shrink-0 items-center text-[13px]",
         editorial
@@ -27,10 +29,10 @@ export function BatchStepper({ value, max, onChange, disabled, variant = "defaul
           : "rounded-xl border border-border bg-surface-muted font-semibold",
       )}
     >
-      {editorial ? <span className="editorial-label pl-3 pr-1">Images</span> : null}
+      {editorial ? <span className="editorial-label pl-3 pr-1">{unit}</span> : null}
       <button
         type="button"
-        aria-label="Fewer images"
+        aria-label={`Fewer ${unit}`}
         onClick={() => onChange(Math.max(1, value - 1))}
         disabled={disabled || value <= 1}
         className={cn(
@@ -45,7 +47,7 @@ export function BatchStepper({ value, max, onChange, disabled, variant = "defaul
       </span>
       <button
         type="button"
-        aria-label="More images"
+        aria-label={`More ${unit}`}
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={disabled || value >= max}
         className={cn(

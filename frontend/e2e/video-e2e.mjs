@@ -2,7 +2,7 @@
 // USE_FAKE_PROVIDERS mode (no Hugging Face quota is used).
 import { chromium } from "playwright";
 
-const base = "http://127.0.0.1:3000";
+const base = process.env.E2E_BASE ?? "http://127.0.0.1:3000";
 const [shots, pngPath] = process.argv.slice(2);
 const email = `video-${Date.now()}@example.com`;
 const results = [];

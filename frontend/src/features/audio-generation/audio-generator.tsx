@@ -4,8 +4,10 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { GenerationDetailDialog } from "@/components/generation/generation-detail-dialog";
-import { AudioSidebar } from "@/features/audio-generation/audio-sidebar";
-import { AudioWorkspace } from "@/features/audio-generation/audio-workspace";
+import Link from "next/link";
+
+import { AudioRail } from "@/features/audio-generation/audio-rail";
+import { AudioResults } from "@/features/audio-generation/audio-results";
 import {
   useActiveGenerationPolling,
   useCreateAudioGeneration,
@@ -98,7 +100,7 @@ export function AudioGenerator({ initialModelId, initialScript, initialVoice, in
     if (modelById(generation.model_id)) setModelId(generation.model_id);
     if (generation.settings.voice) setVoice(generation.settings.voice);
     if (generation.settings.language) setLanguage(generation.settings.language);
-    if (generation.settings.style_prompt) setStylePrompt(generation.settings.style_prompt);
+    setStylePrompt(generation.settings.style_prompt ?? "");
     if (generation.settings.batch_size) setBatchSize(generation.settings.batch_size);
     setDetail(null);
     document.getElementById("audio-script")?.focus();
@@ -122,39 +124,57 @@ export function AudioGenerator({ initialModelId, initialScript, initialVoice, in
       : null;
 
   return (
-    <div className="mx-auto grid max-w-[1500px] gap-4 px-3 py-4 sm:px-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-      <AudioSidebar
-        script={script}
-        onScriptChange={(value) => {
-          setScript(value);
-          if (error) setError(null);
-        }}
-        models={models}
-        model={model}
-        onModelChange={selectModel}
-        voice={effectiveVoice}
-        onVoiceChange={setVoice}
-        language={effectiveLanguage}
-        onLanguageChange={setLanguage}
-        stylePrompt={stylePrompt}
-        onStylePromptChange={setStylePrompt}
-        batchSize={effectiveBatchSize}
-        onBatchSizeChange={setBatchSize}
-        onGenerate={handleGenerate}
-        submitting={create.isPending}
-        error={error}
-        disabledReason={disabledReason}
-      />
+    <div className="mx-auto max-w-[1500px] px-4 pb-16 sm:px-6">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border-subtle py-5">
+        <div>
+          <h1 className="editorial-label">Audio Studio</h1>
+          <p className="mt-1 text-[13px] text-foreground-muted">Turn words into voice.</p>
+        </div>
+        {items.length > 0 ? (
+          <Link href="/history" className="text-[13px] text-foreground-muted transition-colors hover:text-accent-text">
+            View archive
+          </Link>
+        ) : null}
+      </header>
 
-      <AudioWorkspace
-        key={submissions}
-        items={items}
-        loading={listQuery.isPending}
-        modelById={modelById}
-        onOpen={setDetail}
-        onRetry={regenerate}
-        retrying={retry.isPending}
-      />
+      <div className="grid gap-6 py-6 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-10">
+        {/* Audio controls are more compact than Video's, so the rail is narrower. */}
+        <div className="lg:sticky lg:top-20 lg:self-start">
+          <AudioRail
+            script={script}
+            onScriptChange={(value) => {
+              setScript(value);
+              if (error) setError(null);
+            }}
+            models={models}
+            model={model}
+            onModelChange={selectModel}
+            voice={effectiveVoice}
+            onVoiceChange={setVoice}
+            language={effectiveLanguage}
+            onLanguageChange={setLanguage}
+            stylePrompt={stylePrompt}
+            onStylePromptChange={setStylePrompt}
+            batchSize={effectiveBatchSize}
+            onBatchSizeChange={setBatchSize}
+            onGenerate={handleGenerate}
+            submitting={create.isPending}
+            error={error}
+            disabledReason={disabledReason}
+          />
+        </div>
+
+        <AudioResults
+          key={submissions}
+          items={items}
+          loading={listQuery.isPending}
+          modelById={modelById}
+          onOpen={setDetail}
+          onReusePrompt={reusePrompt}
+          onRetry={regenerate}
+          retrying={retry.isPending}
+        />
+      </div>
 
       <GenerationDetailDialog
         generation={detailLive}
