@@ -22,7 +22,6 @@ check("anonymous /history redirects to login", true);
 
 // sign up (keeping the ?next= so we land back on History)
 await page.goto(`${base}/signup?next=%2Fhistory`, { waitUntil: "networkidle" });
-await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#signup-name", "History Tester");
 await page.fill("#signup-email", email);
 await page.fill("#signup-password", "passw0rd1");

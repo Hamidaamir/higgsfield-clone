@@ -5,7 +5,6 @@ const shots = process.argv[2];
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 await page.goto(`${base}/signup`);
-await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#signup-name", "Smoke Tester");
 await page.fill("#signup-email", `smoke-${Date.now()}@example.com`);
 await page.fill("#signup-password", "passw0rd1");

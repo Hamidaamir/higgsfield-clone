@@ -47,7 +47,6 @@ await page.screenshot({ path: `${shots}/70-create-anonymous.png`, fullPage: true
 
 // --- Authenticated, empty ----------------------------------------------------------------------
 await page.goto(`${base}/signup?next=%2F`, { waitUntil: "networkidle" });
-await page.getByRole("button", { name: /Continue with Email/ }).click();
 await page.fill("#signup-name", "Create Tester");
 await page.fill("#signup-email", email);
 await page.fill("#signup-password", "passw0rd1");
