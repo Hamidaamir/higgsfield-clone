@@ -56,8 +56,17 @@ check("effect card deep-links into the video generator with a prompt", /\/genera
 
 // --- Catalog pages + mega menu ---------------------------------------------------------
 await page.goto(`${base}/image`);
-check("/image catalog lists Available and Preview tools", (await page.getByText("Available now").count()) >= 2 && (await page.getByText("Preview", { exact: true }).count()) >= 5);
-check("real image model card links to the generator", (await page.locator('section[aria-label="Models"] a[href^="/generate/image?model="]').count()) >= 1);
+// The catalog states availability per entry as text, not as a coloured chip.
+check(
+  "/image catalog marks entries Available and Preview",
+  (await page.locator('main article[data-status="available"]').count()) >= 2 &&
+    (await page.locator('main article[data-status="preview"]').count()) >= 5 &&
+    (await page.getByText("Preview", { exact: true }).count()) >= 5,
+);
+check(
+  "real image model card links to the generator",
+  (await page.locator('section[aria-labelledby="models-heading"] a[href^="/generate/image?model="]').count()) >= 1,
+);
 const primaryNav = page.getByRole("navigation", { name: "Primary" });
 // The dense mega menu was replaced by the Studio panel: four real workspaces, click to open.
 await page.waitForLoadState("networkidle");
