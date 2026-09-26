@@ -29,19 +29,24 @@ const notFound = [];
 page.on("response", (r) => r.status() === 404 && notFound.push(r.url()));
 const h1 = () => page.locator("h1").first().innerText();
 
-// --- Unauthenticated landing / Explore -------------------------------------------------
+// --- Unauthenticated Create landing ----------------------------------------------------
+// `/` is the Create entry point since R2; the discovery galleries live under Explore.
 const landing = await page.goto(`${base}/`);
 check("landing renders for anonymous visitor", landing.status() === 200 && (await visible(page.getByRole("link", { name: "Sign up", exact: true }))));
-check("explore shows the signup card", await visible(page.getByRole("region", { name: "Sign up" })));
-check("explore has curated galleries", (await page.locator("section[aria-label]").count()) >= 5);
-check("explore shows the real FLUX output shipped with the app", (await page.locator('img[src*="flux-lime-jacket"]').count()) >= 1);
-check("explore plays the real LTX clip shipped with the app", (await page.locator('video[src*="/showcase/ltx-paper-boat"]').count()) >= 1);
+check("create page offers the four workspaces", (await page.locator('section#creative-modes a').count()) === 4);
+check("create shows the curated showcase for anonymous visitors", await visible(page.getByRole("heading", { name: "From the studio" })));
+check("create shows the real FLUX output shipped with the app", (await page.locator('img[src*="flux-lime-jacket"]').count()) >= 1);
 check("discovery artwork is rendered locally (no third-party photo hosts)", (await page.locator('img[src^="http"]').count()) === 0);
-await page.screenshot({ path: `${shots}/60-explore.png` });
+await page.screenshot({ path: `${shots}/60-create.png` });
 
-await page.getByRole("link", { name: /Higgsfield Effects/ }).click();
-await page.waitForURL(/\/effects$/);
-check("explore feature card → /effects", (await h1()).toLowerCase().includes("effects"));
+// --- Explore discovery -----------------------------------------------------------------
+await page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Explore", exact: true }).click();
+await page.waitForURL(/\/community$/);
+check("Explore opens the curated gallery", (await h1()).length > 0);
+check("explore plays the real LTX clip shipped with the app", (await page.locator('video[src*="/showcase/ltx-paper-boat"]').count()) >= 1);
+
+await page.goto(`${base}/effects`);
+check("effects page reachable from the shell", (await h1()).toLowerCase().includes("effects"));
 await page.getByRole("tab", { name: "Camera" }).click();
 const effectCards = page.locator('section[aria-label="Effects library"] a[href^="/generate/video"]');
 const effectCount = await effectCards.count();
@@ -134,12 +139,13 @@ await editRow.locator('img[alt^="Make it snow"]').waitFor({ state: "visible", ti
 check("the edit completes into the After slot", true);
 await page.screenshot({ path: `${shots}/61-edit-image.png` });
 
-await page.goto(`${base}/`);
-check("explore switches to the welcome-back card when signed in", await visible(page.getByRole("region", { name: "Continue creating" })));
-await page.getByRole("link", { name: "Create an image" }).click();
+await page.goto(`${base}/`, { waitUntil: "networkidle" });
+check("create switches to Recent creations when signed in", await visible(page.getByRole("heading", { name: "Recent creations" })));
+check("the edit just made appears in recent work", await visible(page.locator('article button[aria-label^="Open details"]')));
+await page.locator('section#creative-modes a[href="/generate/image"]').click();
 await page.waitForURL(/\/generate\/image$/);
 // The account already holds an edit, so the workspace shows results rather than the empty hero.
-check("explore → image generator", await visible(page.locator("#image-prompt")));
+check("create → image generator", await visible(page.locator("#image-prompt")));
 
 await page.goto(`${base}${effectHref}`);
 await page.waitForSelector("#video-prompt");

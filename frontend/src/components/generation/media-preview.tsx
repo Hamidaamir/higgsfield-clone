@@ -58,7 +58,7 @@ export function MediaPreview({ asset, alt, mode = "tile", className, sizes, prio
   return (
     <div
       className={cn(
-        "absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[radial-gradient(80%_60%_at_50%_100%,rgba(214,255,0,0.14),transparent_70%)] bg-surface-muted p-4",
+        "absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[radial-gradient(80%_60%_at_50%_100%,var(--accent-subtle),transparent_70%)] bg-surface-subtle p-4",
         className,
       )}
     >
