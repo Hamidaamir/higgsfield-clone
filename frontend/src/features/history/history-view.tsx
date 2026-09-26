@@ -130,7 +130,7 @@ export function HistoryView({ initialFilter = "all" }: { initialFilter?: History
     <section className="mx-auto max-w-[1280px] px-5 py-8 sm:px-8 sm:py-12 lg:px-12">
       <header>
         <div>
-          <p className="editorial-label text-accent-text">03 / Your work</p>
+          <p className="editorial-label text-accent-text">Your work</p>
           <h1 className="editorial-display mt-3 text-4xl sm:text-5xl">Archive</h1>
           <p className="mt-3 text-sm text-foreground-muted">Everything you’ve made, in one place.</p>
         </div>

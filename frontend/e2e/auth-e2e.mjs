@@ -18,7 +18,7 @@ page.on("response", (r) => r.status() >= 400 && console.log("HTTP", r.status(), 
 // Restart the uvicorn server to pick up the errors.py change is the caller's job; here we just drive the UI.
 await page.goto(`${base}/signup`, { waitUntil: "networkidle" });
 check("auth page carries no product navigation", (await page.locator('nav[aria-label="Primary"]').count()) === 0);
-check("auth header keeps the wordmark home link", (await page.getByRole("link", { name: /Higgsfield home/ }).count()) === 1);
+check("auth header keeps the wordmark home link", (await page.getByRole("link", { name: /Forma home/ }).count()) === 1);
 check("auth header keeps the theme control", (await page.getByRole("button", { name: /Color theme/ }).count()) === 1);
 check("signup has a single meaningful h1", (await page.locator("h1").count()) === 1);
 check("email fields are visible without an extra step", await page.locator("#signup-email").isVisible());

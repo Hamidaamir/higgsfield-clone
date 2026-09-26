@@ -31,7 +31,7 @@ const STUDIO_HREFS = ["/generate/image", "/generate/video", "/generate/audio", "
 await page.goto(`${base}/`, { waitUntil: "networkidle" });
 check("hero headline renders once as the page h1", (await page.locator("h1").count()) === 1);
 check("hero headline carries the accent emphasis", (await page.locator("h1 em").innerText()).includes("reality"));
-check("hero eyebrow is present without numeric prefixes", (await page.getByText("AI creative studio").count()) === 1);
+check("hero eyebrow is present without numeric prefixes", (await page.locator("main").getByText("AI creative studio").count()) === 1);
 
 const modes = page.locator('section#creative-modes a');
 check(

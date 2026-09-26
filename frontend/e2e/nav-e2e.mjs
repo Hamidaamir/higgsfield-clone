@@ -94,7 +94,7 @@ check("preview tool page renders with a working fallback link", (await page.getB
 await page.goto(`${base}/models/seedance-2-5`);
 check("reference model page renders", (await h1()).length > 0);
 check("unknown tool slug is a real 404", (await page.goto(`${base}/tools/does-not-exist`)).status() === 404);
-check("404 keeps the product shell and offers a way back", (await page.locator('nav[aria-label="Primary"]').count()) === 1 && (await visible(page.getByRole("link", { name: /Back to Explore/ }))));
+check("404 keeps the product shell and offers a way back", (await page.locator('nav[aria-label="Primary"]').count()) === 1 && (await visible(page.getByRole("link", { name: "Back to Create" }))));
 
 // --- Secondary routes ------------------------------------------------------------------
 const secondary = ["/video", "/audio", "/cinema-studio", "/marketing-studio", "/canvas", "/community", "/genjutsu", "/supercomputer", "/3d-jutsu", "/academy", "/contests", "/integrations/mcp", "/integrations/chatgpt", "/pricing", "/enterprise"];

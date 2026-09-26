@@ -2,13 +2,18 @@ import type { Metadata } from "next";
 
 import { ConceptPage } from "@/components/discovery/concept-page";
 
-export const metadata: Metadata = { title: "Genjutsu" };
+/*
+ * The route keeps its historical path so existing links and tests stay valid, but the concept
+ * is named for what it does. "Genjutsu" was another product's name for this idea; Forma does
+ * not own it and does not implement it, so nothing here claims it either way.
+ */
+export const metadata: Metadata = { title: "Motion transfer" };
 
-export default function GenjutsuPage() {
+export default function MotionTransferPage() {
   return (
     <ConceptPage
       eyebrow="Concept / Video"
-      title="Genjutsu"
+      title="Motion transfer"
       description="Reality manipulation for footage you already have: transfer the motion of one clip into a new scene, or swap a detail while camera, timing and performance stay exactly as filmed."
       note="Preview only. Video-to-video editing has no free provider in this build, so nothing on this page generates. Image-to-video with LTX Video is the closest workflow that actually runs."
       seed="genjutsu"

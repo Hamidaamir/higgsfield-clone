@@ -9,7 +9,7 @@ import Image from "next/image";
 
 import { SHOWCASE } from "@/lib/config/explore";
 
-const perks = ["Real image, video and speech generation", "Free to sign up — no card, no credits to buy", "Everything you make is saved to History"];
+const perks = ["Real image, video and speech generation", "Free to sign up — no card, no credits to buy", "Everything you make is saved to your archive"];
 
 /** Sign-up card from the reference; once signed in it becomes the "continue creating" card. */
 export function ExploreAccountCard() {
@@ -44,7 +44,7 @@ export function ExploreAccountCard() {
                 <Link href="/generate/image">Create an image</Link>
               </Button>
               <Button asChild size="lg" variant="white">
-                <Link href="/history">Open History</Link>
+                <Link href="/history">Open Archive</Link>
               </Button>
             </>
           ) : (

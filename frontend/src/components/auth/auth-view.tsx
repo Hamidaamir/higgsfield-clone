@@ -10,6 +10,7 @@ import { AuthForm, type AuthMode } from "@/components/auth/auth-form";
 import { SocialButton } from "@/components/auth/social-button";
 import { safeNextPath } from "@/hooks/use-auth";
 import { fetchAuthProviders } from "@/lib/api/auth";
+import { siteConfig } from "@/lib/config/site";
 import { queryKeys } from "@/lib/query-keys";
 
 const COPY: Record<
@@ -60,7 +61,7 @@ export function AuthView({ mode, nextPath }: AuthViewProps) {
   const oauthError = OAUTH_ERRORS[params.get("error") ?? ""];
 
   const onSuccess = () => {
-    toast.success(mode === "signup" ? "Account created. Welcome to Higgsfield!" : "Welcome back!");
+    toast.success(mode === "signup" ? `Account created. Welcome to ${siteConfig.name}!` : "Welcome back!");
     // A full navigation, not router.replace(): if the visitor reached us by clicking a gated page, the
     // client router has cached that page as "redirect to login" and would replay it despite the new session.
     window.location.assign(next);

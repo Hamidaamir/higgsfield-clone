@@ -23,8 +23,6 @@ export const CATALOG_MODELS: CatalogModel[] = [
   { slug: "sdxl-lightning", name: "SDXL Lightning", description: "1024px images in a few steps, any aspect ratio", category: "image", registryId: "sdxl-lightning", vendor: "ByteDance", seed: "m-sdxl" },
   { slug: "lucid-origin", name: "Lucid Origin", description: "Leonardo's most prompt-responsive model for design and renders", category: "image", registryId: "lucid-origin", vendor: "Leonardo", seed: "m-lucid" },
   // Image — catalog
-  { slug: "higgsfield-soul-2", name: "Higgsfield Soul 2.0", description: "Next generation ultra-realistic fashion visuals", category: "image", badge: "TOP", vendor: "Higgsfield", seed: "m-soul" },
-  { slug: "higgsfield-soul-cinema", name: "Higgsfield Soul Cinema", description: "Cinematic film-grade aesthetic", category: "image", vendor: "Higgsfield", seed: "m-soul-cinema" },
   { slug: "gpt-image-2-5-sunburst", name: "GPT Image 2.5 Sunburst", description: "Exceptional quality, precise edits", category: "image", badge: "New", vendor: "OpenAI", seed: "m-gpt-sunburst" },
   { slug: "gpt-image-2", name: "GPT Image 2", description: "4K images with near-perfect text rendering", category: "image", vendor: "OpenAI", seed: "m-gpt-image" },
   { slug: "seedream-5-pro", name: "Seedream 5.0 Pro", description: "Logically consistent images with intelligent visual reasoning", category: "image", vendor: "ByteDance", seed: "m-seedream" },
@@ -35,7 +33,6 @@ export const CATALOG_MODELS: CatalogModel[] = [
   { slug: "ltx-video", name: "LTX Video", description: "Fast distilled text-to-video and image-to-video clips", category: "video", registryId: "ltx-video", badge: "New", vendor: "Lightricks", seed: "m-ltx" },
   // Video — catalog
   { slug: "seedance-2-5", name: "Seedance 2.5", description: "Create cinematic videos up to 30 seconds", category: "video", badge: "TOP", vendor: "ByteDance", seed: "m-seedance" },
-  { slug: "higgsfield-genjutsu", name: "Higgsfield Genjutsu", description: "Transfer motion or swap objects from a reference video", category: "video", badge: "New", vendor: "Higgsfield", seed: "m-genjutsu" },
   { slug: "kling-3", name: "Kling 3.0", description: "Cinematic videos with audio", category: "video", vendor: "Kuaishou", seed: "m-kling" },
   { slug: "kling-motion-control", name: "Kling Motion Control", description: "Transfer motion from video to image", category: "video", vendor: "Kuaishou", seed: "m-kling-motion" },
   { slug: "wan-3", name: "Wan 3.0", description: "Create videos from text, keyframes, or multimodal references", category: "video", vendor: "Alibaba", seed: "m-wan" },

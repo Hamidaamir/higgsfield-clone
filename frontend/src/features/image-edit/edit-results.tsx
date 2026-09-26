@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useAsset } from "@/hooks/use-asset";
-import { downloadUrl } from "@/lib/media";
+import { DOWNLOAD_PREFIX, downloadUrl } from "@/lib/media";
 import type { Asset, Generation, ModelSpec } from "@/types/generation";
 
 /** Both halves of a comparison sit in a plate of the same height, like two prints hung level. */
@@ -154,7 +154,7 @@ function ResultPanel({
   asset: Asset;
   onOpen: EditResultsProps["onOpen"];
 }) {
-  const filename = `higgsfield-edit-${generation.id.slice(0, 8)}.png`;
+  const filename = `${DOWNLOAD_PREFIX}-edit-${generation.id.slice(0, 8)}.png`;
   const index = Math.max(0, generation.assets.findIndex((a) => a.id === asset.id));
   return (
     <>

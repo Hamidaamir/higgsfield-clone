@@ -1,6 +1,6 @@
 import { PrintFrame } from "@/components/editorial/print-frame";
 import type { ArtTheme } from "@/components/discovery/artwork";
-import type { ShowcaseMedia } from "@/components/discovery/media-card";
+import type { ShowcaseMedia } from "@/types/showcase";
 
 /** Local sample or explicitly labelled concept artwork; videos play only on request. */
 export function CatalogPlate({ seed, theme, media, alt, ratio = "4 / 3", priority = false }: {

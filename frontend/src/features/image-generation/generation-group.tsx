@@ -11,7 +11,7 @@ import {
 } from "@/components/generation/generation-group-frame";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
-import { aspectRatioStyle, downloadUrl } from "@/lib/media";
+import { DOWNLOAD_PREFIX, aspectRatioStyle, downloadUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { Asset, Generation, ModelSpec } from "@/types/generation";
 
@@ -90,7 +90,7 @@ function ResultPlate({
   onOpen: GenerationGroupActions["onOpen"];
   columns: number;
 }) {
-  const filename = `higgsfield-${generation.id.slice(0, 8)}.png`;
+  const filename = `${DOWNLOAD_PREFIX}-${generation.id.slice(0, 8)}.png`;
   return (
     <figure className="group relative">
       <button

@@ -1,6 +1,6 @@
 /** Curated showcase (product content, not user history). Two entries are real outputs of this stack. */
 import type { ArtTheme } from "@/components/discovery/artwork";
-import type { ShowcaseMedia } from "@/components/discovery/media-card";
+import type { ShowcaseMedia } from "@/types/showcase";
 import { SHOWCASE } from "@/lib/config/explore";
 
 export interface CommunityPost {
