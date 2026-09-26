@@ -1,21 +1,22 @@
 "use client";
 
-import { AlertTriangle, Download, Maximize2, RefreshCw, RotateCcw } from "lucide-react";
+import { Download, Maximize2 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 
+import {
+  FailedAnnotation,
+  GenerationGroupFrame,
+  PendingPlate,
+  type GroupActions,
+} from "@/components/generation/generation-group-frame";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
-import { relativeTime } from "@/lib/format";
-import { aspectRatioStyle, downloadUrl, ratioToStyle } from "@/lib/media";
+import { aspectRatioStyle, downloadUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import type { Asset, Generation, ModelSpec } from "@/types/generation";
 
-export interface GenerationGroupActions {
+export interface GenerationGroupActions extends GroupActions {
   onOpen: (generation: Generation, asset: Asset) => void;
-  onReusePrompt: (generation: Generation) => void;
-  onRetry: (generation: Generation) => void;
-  retrying?: boolean;
 }
 
 interface GenerationGroupProps extends GenerationGroupActions {
@@ -39,9 +40,9 @@ const GRID_BY_COUNT: Record<number, string> = {
 };
 
 /**
- * One request rendered as a contact-sheet entry: a thin metadata rule, the plates it produced,
- * and its actions. Keeping the generation as the unit (rather than flattening assets into a
- * grid) is what makes a batch readable as "one prompt, four takes".
+ * One image request rendered as a contact-sheet entry: a thin metadata rule, the plates it
+ * produced, and its actions. Keeping the generation as the unit (rather than flattening
+ * assets into a grid) is what makes a batch readable as "one prompt, four takes".
  */
 export function GenerationGroup({ generation, model, onOpen, onReusePrompt, onRetry, retrying }: GenerationGroupProps) {
   const ratio = generation.settings.aspect_ratio ?? "1:1";
@@ -52,105 +53,29 @@ export function GenerationGroup({ generation, model, onOpen, onReusePrompt, onRe
   const columns = Math.min(Math.max(plates, 1), 4);
 
   return (
-    <article className="border-t border-border-subtle pt-4" aria-label={`${model?.name ?? generation.model_id}: ${generation.prompt}`}>
-      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pb-3">
-        <p className="min-w-0 flex-1 truncate text-[13px] text-foreground" title={generation.prompt}>
-          {generation.prompt}
-        </p>
-        <p className="flex shrink-0 items-center gap-1.5 text-[11px] text-foreground-subtle">
-          <span>{model?.name ?? generation.model_id}</span>
-          <span aria-hidden>·</span>
-          <span>{ratio}</span>
-          {batch > 1 ? (
-            <>
-              <span aria-hidden>·</span>
-              <span>{batch} images</span>
-            </>
-          ) : null}
-          <span aria-hidden>·</span>
-          <time dateTime={generation.created_at}>{relativeTime(generation.created_at)}</time>
-        </p>
-        {!pending ? (
-          <span className="flex shrink-0 items-center gap-1">
-            <Tooltip content="Reuse prompt & settings">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-8 rounded-none"
-                onClick={() => onReusePrompt(generation)}
-                aria-label={`Reuse prompt: ${generation.prompt}`}
-              >
-                <RotateCcw className="size-3.5" />
-              </Button>
-            </Tooltip>
-            <Tooltip content="Generate again">
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-8 rounded-none"
-                onClick={() => onRetry(generation)}
-                disabled={retrying}
-                aria-label={`Generate again: ${generation.prompt}`}
-              >
-                <RefreshCw className="size-3.5" />
-              </Button>
-            </Tooltip>
-          </span>
-        ) : null}
-      </header>
-
+    <GenerationGroupFrame
+      generation={generation}
+      model={model}
+      meta={batch > 1 ? [ratio, `${batch} images`] : [ratio]}
+      showActions={!pending}
+      onReusePrompt={onReusePrompt}
+      onRetry={onRetry}
+      retrying={retrying}
+    >
       {failed ? (
-        <FailedPlate generation={generation} onReusePrompt={onReusePrompt} onRetry={onRetry} retrying={retrying} />
+        <FailedAnnotation generation={generation} onReusePrompt={onReusePrompt} onRetry={onRetry} retrying={retrying} />
       ) : (
-        <div
-          className={cn("grid gap-3", GRID_BY_COUNT[columns], WIDTH_BY_COUNT[columns])}
-        >
+        <div className={cn("grid gap-3", GRID_BY_COUNT[columns], WIDTH_BY_COUNT[columns])}>
           {pending
             ? Array.from({ length: batch }, (_, i) => (
                 <PendingPlate key={`${generation.id}-${i}`} generation={generation} model={model} ratio={ratio} />
               ))
             : generation.assets.map((asset) => (
-                <ResultPlate
-                  key={asset.id}
-                  generation={generation}
-                  asset={asset}
-                  onOpen={onOpen}
-                  columns={columns}
-                />
+                <ResultPlate key={asset.id} generation={generation} asset={asset} onOpen={onOpen} columns={columns} />
               ))}
         </div>
       )}
-    </article>
-  );
-}
-
-function useElapsed(since: string): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return Math.max(0, Math.round((now - new Date(since).getTime()) / 1000));
-}
-
-/** Aspect-correct placeholder. The backend reports no progress, so only status and elapsed time are shown. */
-function PendingPlate({ generation, model, ratio }: { generation: Generation; model?: ModelSpec; ratio: string }) {
-  const elapsed = useElapsed(generation.created_at);
-  const queued = generation.status === "queued";
-  const label = queued ? "Queued" : `Generating with ${model?.name ?? generation.model_id}`;
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label={label}
-      className="relative overflow-hidden border border-border-subtle skeleton-shimmer"
-      style={ratioToStyle(ratio)}
-    >
-      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-3">
-        <span className="editorial-label text-accent-text">{queued ? "Queued" : "Generating"}</span>
-        <span className="text-[11px] tabular-nums text-foreground-subtle">{elapsed}s</span>
-      </div>
-    </div>
+    </GenerationGroupFrame>
   );
 }
 
@@ -206,39 +131,5 @@ function ResultPlate({
         </Tooltip>
       </figcaption>
     </figure>
-  );
-}
-
-function FailedPlate({
-  generation,
-  onReusePrompt,
-  onRetry,
-  retrying,
-}: {
-  generation: Generation;
-} & Pick<GenerationGroupActions, "onReusePrompt" | "onRetry" | "retrying">) {
-  return (
-    <div
-      role="alert"
-      className="flex max-w-[26rem] flex-col gap-3 border border-danger/40 bg-danger/5 p-4"
-    >
-      <AlertTriangle className="size-5 text-danger" aria-hidden />
-      <div>
-        <p className="text-sm font-medium text-foreground">Generation failed</p>
-        {/* The API already normalises provider/quota/rate-limit failures into a safe message. */}
-        <p className="mt-1 text-[13px] leading-snug text-foreground-muted">
-          {generation.error_message ?? "Something went wrong."}
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" className="rounded-none" onClick={() => onReusePrompt(generation)}>
-          Edit prompt
-        </Button>
-        <Button size="sm" className="rounded-none" onClick={() => onRetry(generation)} loading={retrying}>
-          <RefreshCw className="size-3.5" aria-hidden />
-          Retry
-        </Button>
-      </div>
-    </div>
   );
 }

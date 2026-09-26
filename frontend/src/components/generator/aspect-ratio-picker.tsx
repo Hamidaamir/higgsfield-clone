@@ -15,10 +15,12 @@ interface AspectRatioPickerProps {
   onChange: (ratio: string) => void;
   disabled?: boolean;
   variant?: ControlVariant;
+  /** Editorial only: drop the inline "Aspect" caption when a group heading already says it. */
+  hideLabel?: boolean;
 }
 
 /** Aspect ratio chip; only the ratios the selected model actually supports are offered. */
-export function AspectRatioPicker({ options, value, onChange, disabled, variant = "default" }: AspectRatioPickerProps) {
+export function AspectRatioPicker({ options, value, onChange, disabled, variant = "default", hideLabel }: AspectRatioPickerProps) {
   const [open, setOpen] = useState(false);
   const locked = options.length <= 1;
 
@@ -27,11 +29,13 @@ export function AspectRatioPicker({ options, value, onChange, disabled, variant 
       aria-label="Aspect ratio"
       icon={variant === "editorial" ? undefined : <Scan className="size-4" />}
       label={
-        variant === "editorial" ? (
+        variant === "editorial" && !hideLabel ? (
           <span className="flex items-baseline gap-2">
             <span className="editorial-label">Aspect</span>
             <span className="tabular-nums">{value}</span>
           </span>
+        ) : variant === "editorial" ? (
+          <span className="tabular-nums">{value}</span>
         ) : (
           value
         )

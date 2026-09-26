@@ -3,7 +3,7 @@
 import { Check, Clock } from "lucide-react";
 import { useState } from "react";
 
-import { SettingChip } from "@/components/generator/setting-chip";
+import { SettingChip, type ControlVariant } from "@/components/generator/setting-chip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -12,11 +12,43 @@ interface DurationPickerProps {
   value: number;
   onChange: (seconds: number) => void;
   disabled?: boolean;
+  variant?: ControlVariant;
 }
 
 /** Clip-length chip; only the lengths the selected model supports are offered. */
-export function DurationPicker({ options, value, onChange, disabled }: DurationPickerProps) {
+export function DurationPicker({ options, value, onChange, disabled, variant = "default" }: DurationPickerProps) {
   const [open, setOpen] = useState(false);
+
+  // With only a handful of lengths, a segmented row beats a dropdown: every option is one tap
+  // away and the selected length is always visible.
+  if (variant === "editorial") {
+    return (
+      <div role="radiogroup" aria-label="Duration" className="flex flex-wrap items-stretch gap-px border border-border-default bg-border-subtle">
+        {options.map((seconds) => {
+          const selected = seconds === value;
+          return (
+            <button
+              key={seconds}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              disabled={disabled}
+              onClick={() => onChange(seconds)}
+              className={cn(
+                "min-w-11 flex-1 px-3 py-2 text-[13px] tabular-nums transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                selected
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-surface text-foreground-muted hover:bg-surface-hover hover:text-foreground",
+              )}
+            >
+              {seconds}s
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

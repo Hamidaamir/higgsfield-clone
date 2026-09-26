@@ -149,9 +149,10 @@ check("create → image generator", await visible(page.locator("#image-prompt"))
 await page.goto(`${base}${effectHref}`);
 await page.waitForSelector("#video-prompt");
 check("effect deep link prefills the video prompt", (await page.inputValue("#video-prompt")).length > 10);
-await page.getByRole("tab", { name: "Edit Video" }).click();
+// The rail's mode nav links to the honest preview page for unimplemented Edit Video.
+await page.locator('form[aria-label="Video generator"] a[href="/tools/edit-video"]').click();
 await page.waitForURL(/\/tools\/edit-video$/);
-check("video sidebar Edit Video tab opens the preview page", true);
+check("video rail Edit link opens the preview page", true);
 
 await page.goto(`${base}/generate/audio`);
 check("audio generator reachable", await visible(page.getByRole("form", { name: "Speech generator" })));

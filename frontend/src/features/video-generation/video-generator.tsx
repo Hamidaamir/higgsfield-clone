@@ -4,8 +4,10 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { GenerationDetailDialog } from "@/components/generation/generation-detail-dialog";
-import { VideoSidebar } from "@/features/video-generation/video-sidebar";
-import { VideoWorkspace } from "@/features/video-generation/video-workspace";
+import Link from "next/link";
+
+import { VideoRail } from "@/features/video-generation/video-rail";
+import { VideoResults } from "@/features/video-generation/video-results";
 import {
   useActiveGenerationPolling,
   useCreateVideoGeneration,
@@ -41,6 +43,7 @@ export function VideoGenerator({ initialModelId, initialPrompt, initialAspectRat
   const [modelId, setModelId] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState(initialAspectRatio ?? "16:9");
   const [duration, setDuration] = useState<number | null>(initialDuration ?? null);
+  const [negativePrompt, setNegativePrompt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<Generation | null>(null);
   const [submissions, setSubmissions] = useState(0);
@@ -74,12 +77,15 @@ export function VideoGenerator({ initialModelId, initialPrompt, initialAspectRat
     }
     setError(null);
     try {
+      const trimmedNegative = negativePrompt.trim();
       await create.mutateAsync({
         prompt: parsed.data,
         model_id: model.id,
         aspect_ratio: effectiveAspectRatio,
         duration_s: effectiveDuration,
         reference_asset_id: reference.asset?.id,
+        // Only sent when the selected model advertises support, so the API never rejects it.
+        ...(model.supports_negative_prompt && trimmedNegative ? { negative_prompt: trimmedNegative } : {}),
       });
       setSubmissions((n) => n + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -93,6 +99,7 @@ export function VideoGenerator({ initialModelId, initialPrompt, initialAspectRat
     if (modelById(generation.model_id)) setModelId(generation.model_id);
     if (generation.settings.aspect_ratio) setAspectRatio(generation.settings.aspect_ratio);
     if (generation.settings.duration_s) setDuration(generation.settings.duration_s);
+    setNegativePrompt(generation.settings.negative_prompt ?? "");
     setDetail(null);
     document.getElementById("video-prompt")?.focus();
   };
@@ -115,36 +122,56 @@ export function VideoGenerator({ initialModelId, initialPrompt, initialAspectRat
       : null;
 
   return (
-    <div className="mx-auto grid max-w-[1500px] gap-4 px-3 py-4 sm:px-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-      <VideoSidebar
-        prompt={prompt}
-        onPromptChange={(value) => {
-          setPrompt(value);
-          if (error) setError(null);
-        }}
-        models={models}
-        model={model}
-        onModelChange={selectModel}
-        aspectRatio={effectiveAspectRatio}
-        onAspectRatioChange={setAspectRatio}
-        duration={effectiveDuration}
-        onDurationChange={setDuration}
-        reference={reference}
-        onGenerate={handleGenerate}
-        submitting={create.isPending}
-        error={error}
-        disabledReason={disabledReason}
-      />
+    <div className="mx-auto max-w-[1500px] px-4 pb-16 sm:px-6">
+      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-border-subtle py-5">
+        <div>
+          <h1 className="editorial-label">Video Studio</h1>
+          <p className="mt-1 text-[13px] text-foreground-muted">Create motion from text or a reference.</p>
+        </div>
+        {items.length > 0 ? (
+          <Link href="/history" className="text-[13px] text-foreground-muted transition-colors hover:text-accent-text">
+            View archive
+          </Link>
+        ) : null}
+      </header>
 
-      <VideoWorkspace
-        key={submissions}
-        items={items}
-        loading={listQuery.isPending}
-        modelById={modelById}
-        onOpen={setDetail}
-        onRetry={regenerate}
-        retrying={retry.isPending}
-      />
+      <div className="grid gap-6 py-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-8">
+        {/* The rail follows long result feeds on desktop; it stacks above them below lg. */}
+        <div className="lg:sticky lg:top-20 lg:self-start">
+          <VideoRail
+            prompt={prompt}
+            onPromptChange={(value) => {
+              setPrompt(value);
+              if (error) setError(null);
+            }}
+            negativePrompt={negativePrompt}
+            onNegativePromptChange={setNegativePrompt}
+            models={models}
+            model={model}
+            onModelChange={selectModel}
+            aspectRatio={effectiveAspectRatio}
+            onAspectRatioChange={setAspectRatio}
+            duration={effectiveDuration}
+            onDurationChange={setDuration}
+            reference={reference}
+            onGenerate={handleGenerate}
+            submitting={create.isPending}
+            error={error}
+            disabledReason={disabledReason}
+          />
+        </div>
+
+        <VideoResults
+          key={submissions}
+          items={items}
+          loading={listQuery.isPending}
+          modelById={modelById}
+          onOpen={setDetail}
+          onReusePrompt={reusePrompt}
+          onRetry={regenerate}
+          retrying={retry.isPending}
+        />
+      </div>
 
       <GenerationDetailDialog
         generation={detailLive}
