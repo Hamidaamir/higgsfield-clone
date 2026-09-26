@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Archivo, Instrument_Serif, Inter } from "next/font/google";
 
 import { AppProviders } from "@/components/providers";
-import { PromoBanner } from "@/components/layout/promo-banner";
 import { TopNav } from "@/components/layout/top-nav";
 import { siteConfig } from "@/lib/config/site";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
@@ -44,7 +43,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="flex min-h-screen flex-col">
         <AppProviders>
-          <PromoBanner />
           <TopNav />
           <main className="flex-1">{children}</main>
         </AppProviders>
